@@ -6,23 +6,25 @@ The starting point for this configuration is a fully deployed OCP 4 cluster.
 
 ## ACM installation
 
-Before ACM policies can be used, the RHACM operator must be installed and configured, ansible is used for this taks.
+Before ACM policies can be used to configure the OCP cluster, the RHACM operator must be installed and configured. Ansible is used for this tak.
 
-**Install ansible** 
+**Ansible installation** 
 
 To intall ansible core components use the following command in the host where the playbooks are going to be run:
 ```
 sudo python3 -m pip install ansible
 ```
 
-In order to stablish a secure connections with the Openshift API, the k8s modules need access to the CA certificate used by the cluster. Obtain the CA bundle running the following command and make sure the file is in the Ansible directory:
+In order for ansible to stablish a secure connections with the Openshift API, the k8s ansible modules need access to the root CA certificate used by the cluster's API service. Obtain the CA bundle running the following command.
+
+Make sure the resulting file is stored in the Ansible directory:
 
 ```
 $ oc rsh -n openshift-authentication <oauth-openshift-pod> cat /run/secrets/kubernetes.io/serviceaccount/ca.crt > Ansible/api-ca.crt
 ```
-The playbook requires cluster admin credentials to make configuration changes to the cluster. The credentials are expected in the file **Ansible/group_vars/user_credentials.vault**.
+The playbook requires cluster admin credentials so it can make configuration changes to the cluster. The credentials are expected in the file **Ansible/group_vars/user_credentials.vault**.
 
-The credentials must be assigned to the variable **token**, and its value can be obtained using the following command:  
+The credentials must be assigned to the variable **token**, its value can be obtained using the following command:  
 ```
 $ oc whoami -t
 sha256~roxev5_y0w4o-VjSadl3tiTkXqSOVhCRMvmV-K3xpfw
@@ -38,7 +40,7 @@ $ echo "token: sha256~roxev5_y0w4o-VjSadl3tiTkXqSOVhCRMvmV-K3xpfw" > group_vars/
 $ pwmake 128 > vault-id
 $ ansible-vault encrypt --vault-id vault-id group_vars/user_credentials.vault
 ```
-The vault-id file must be passed as an argument to the playbook.
+The vault-id is passed as an argument to the playbook later.
 
 The playbook needs the API entrypoint of the Openshift cluter. Assign the value to the ansible variable **api_entrypoint**. The value can be obtained running the following command:
 ```
@@ -70,7 +72,7 @@ rhacm_subs_channel: release-2.10
 rhacm_subs_version: advanced-cluster-management.v2.10.0
 ```
 
-Run the ansible playbook, make sure to assing the values obtained before for the variables: api_entrypoint and api_ca_cert.  And reference the vault-id file.
+Run the ansible playbook, make sure to assing the values obtained in the steps before for the variables: api_entrypoint and api_ca_cert.  And reference the **vault-id** file.
 ```
 ansible-playbook -vvv ocp-initialization.yaml -e api_entrypoint="https://api.cluster-bhj4z.bhj4z.sandbox1490.opentlc.com:6443" -e api_ca_cert=api-ca.crt --vault-id vault-id
 ```
