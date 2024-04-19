@@ -14,6 +14,21 @@ To intall ansible core components use the following command in the host where th
 ```
 sudo python3 -m pip install ansible
 ```
+Update the kubernetes core andible modules, run this command as the user who will run the playbooks:
+```
+ansible-galaxy collection install kubernetes.core --upgrade
+```
+Verify that the kubernetes core modules have been updated
+```
+ansible-galaxy collection list
+
+...
+# /home/lab-user/.ansible/collections/ansible_collections
+Collection      Version
+--------------- -------
+kubernetes.core 3.0.1
+```
+**Prepare for playbook execution**
 
 In order for ansible to stablish a secure connections with the Openshift API, the k8s ansible modules need access to the root CA certificate used by the cluster's API service. Obtain the CA bundle running the following command.
 
