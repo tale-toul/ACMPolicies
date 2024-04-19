@@ -1,0 +1,17 @@
+---
+- name: Initial OCP 4 configuration
+  hosts: localhost
+  connection: local
+  module_defaults:
+    group/kubernetes.core.k8s:
+      host: "{{ api_entrypoint }}"
+      ca_cert: "{{ api_ca_cert }}"
+  tasks:
+    - name: Load user credentials for OCP
+      include_vars: 
+        file: group_vars/user_credentials.vault
+      no_log: true
+    - name: Install RHACM operator
+      include_role:
+        name: rhacm_install
+...

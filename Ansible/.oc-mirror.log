@@ -1,0 +1,4 @@
+time="2024-04-19T10:19:21+02:00" level=info msg="trying next host" error="failed to authorize: failed to fetch anonymous token: unexpected status: 401 Unauthorized" host=registry.redhat.io
+VERSIONS
+2.10.0
+2.10.1

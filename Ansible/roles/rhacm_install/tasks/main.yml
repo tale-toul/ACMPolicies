@@ -1,0 +1,109 @@
+---
+# tasks file for rhacm_install
+- name: Create namespace
+  k8s:
+    api_key: "{{ token }}"
+    api_version: v1
+    kind: Namespace
+    name: open-cluster-management
+    state: present
+- name: Create Operator Group
+  k8s:
+    api_key: "{{ token }}"
+    definition: "{{ lookup('file', 'operatorgroup.yaml') }}" 
+    state: "present" 
+- name: Create Subscription 
+  k8s:
+    api_key: "{{ token }}"
+    definition: "{{ lookup('template', 'subscription.yaml') }}" 
+    state: "present"
+- block:
+    - name: Get Install Plan
+      k8s_info:
+        api_key: "{{ token }}"
+        api_version: operators.coreos.com/v1alpha1
+        kind: "InstallPlan"
+        namespace: "open-cluster-management"
+      register: _installplan_rhacm
+      until:
+        - _installplan_rhacm.resources[0].status.phase is defined
+        - _installplan_rhacm.resources[0].spec.clusterServiceVersionNames[0] == "{{ rhacm_subs_version }}"
+      retries: 14
+      delay: 4
+  rescue:
+    - name: No install plan found as expected
+      debug: 
+        msg: "No install plan found or install plan with the wrong version number. Expected version was {{ rhacm_subs_version }}, found {{ _installplan_rhacm.resources[0].spec.clusterServiceVersionNames[0] }}"
+    - meta: end_play
+- name: Verify that there is only one install plan available
+  assert:
+    that:
+      - _installplan_rhacm.resources | length == 1
+    fail_msg: "There is ore than one (1) install plan for the RHACM operator.  Probably an update for the operator is available"
+- name: Approve Install Plan
+  kubernetes.core.k8s_json_patch:
+    api_key: "{{ token }}"
+    api_version: operators.coreos.com/v1alpha1
+    kind: "InstallPlan"
+    namespace: "open-cluster-management"
+    name: "{{ _installplan_rhacm.resources[0].metadata.name }}"
+    patch:
+     - op: replace
+       path: /spec/approved
+       value: true
+  when:
+    - _installplan_rhacm.resources[0].status.phase == "RequiresApproval"
+- name: Get ClusterServiceVersion
+  k8s_info:
+    api_key: "{{ token }}"
+    api_version: operators.coreos.com/v1alpha1
+    kind: "Subscription"
+    name: "rhacm-operator-subscription"
+    namespace: "open-cluster-management"
+  register: _subscription_rhacm
+  until:
+    - _subscription_rhacm.resources[0].status.currentCSV is defined
+  retries: 14
+  delay: 4
+- name: Wait for RHACM operator installation to succeed (CSV)
+  k8s_info:
+   api_key: "{{ token }}"
+   api_version: operators.coreos.com/v1alpha1
+   kind: "ClusterServiceVersion"
+   name: "{{ _subscription_rhacm.resources[0].spec.startingCSV }}"
+   namespace: "open-cluster-management"
+  register: _installed_rhacm
+  until:
+    - _installed_rhacm.resources[0].status.phase is defined
+    - _installed_rhacm.resources[0].status.phase == "Succeeded"
+  retries: 25
+  delay: 8
+- name: Create MultiClusterHub
+  k8s:
+    api_key: "{{ token }}"
+    definition: "{{ lookup('file', 'multiclusterhub.yaml') }}" 
+    state: "present" 
+- name: Get Multi Cluster Hub
+  k8s_info:
+    api_key: "{{ token }}"
+    api_version: operator.open-cluster-management.io/v1
+    kind: "MultiClusterHub"
+    name: multiclusterhub
+    namespace: "open-cluster-management"
+  register: _multiclusterhub
+  until: 
+    - _multiclusterhub.resources[0].status.phase is defined
+  retries: 24
+  delay: 12
+- name: Wait for Multi Cluster Hub to Install
+  k8s_info:
+    api_key: "{{ token }}"
+    api_version: operator.open-cluster-management.io/v1
+    kind: "MultiClusterHub"
+    name: multiclusterhub
+    namespace: "open-cluster-management"
+  register: _installed_multiclusterhub
+  until:
+    - _installed_multiclusterhub.resources[0].status.phase == "Running"
+  retries: 35
+  delay: 15

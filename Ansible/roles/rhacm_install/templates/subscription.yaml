@@ -1,0 +1,14 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: rhacm-operator-subscription
+  namespace: open-cluster-management
+spec:
+  channel: "{{ rhacm_subs_channel }}"
+  startingCSV: "{{ rhacm_subs_version }}"
+  installPlanApproval: Manual
+  name: advanced-cluster-management
+  source: redhat-operators 
+  sourceNamespace: openshift-marketplace 
+...
