@@ -1,0 +1,119 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+		policy.open-cluster-management.io/description: Local Storage Operator Installation
+  name: local-storage-operator-install
+  namespace: policies
+spec:
+  disabled: true
+  policy-templates:
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: local-storage-namespace
+      spec:
+        pruneObjectBehavior: DeleteIfCreated
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+              name: openshift-local-storage
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: local-storage-namespace
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: local-storage-operator-group
+      spec:
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1
+            kind: OperatorGroup
+            metadata:
+              name: local-operator-group
+              namespace: openshift-local-storage
+            spec:
+              targetNamespaces:
+                - openshift-local-storage
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: local-storage-operator-group
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: local-storage-subscription
+      spec:
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: Subscription
+            metadata:
+              name: local-storage-operator
+              namespace: openshift-local-storage
+            spec:
+              channel: XXXXXXXXXXXXXXXXXX
+              installPlanApproval: Manual
+              name: local-storage-operator
+              source: redhat-operators
+              sourceNamespace: openshift-marketplace
+              startingCSV: XXXXXXXXXXXXXXXXXX
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: test-artifactory-creds-placement
+  namespace: test-policies
+spec:
+  clusterConditions:
+  - status: "True"
+    type: ManagedClusterConditionAvailable
+  clusterSelector:
+    matchExpressions:
+    - key: vendor
+      operator: In
+      values:
+      - OpenShift
+    - key: name
+      operator: In
+      values:
+      - degcpd1
+      - ukgcpe1
+      - ukgcpd1
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: test-artifactory-creds-binding
+  namespace: policies
+placementRef:
+  apiGroup: apps.open-cluster-management.io
+  kind: PlacementRule
+  name: test-artifactory-creds-placement
+subjects:
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: test-artifactory-creds

@@ -14,4 +14,11 @@
     - name: Install RHACM operator
       include_role:
         name: rhacm_install
+    - name: Create Policies namespace
+      k8s:
+        api_key: "{{ token }}"
+        api_version: v1
+        kind: Namespace
+        name: policies
+        state: present
 ...

@@ -105,5 +105,8 @@ Run the ansible playbook, make sure to assing the values obtained in the steps b
 ansible-playbook -vvv ocp-initialization.yaml -e api_entrypoint="https://api.cluster-bhj4z.bhj4z.sandbox1490.opentlc.com:6443" -e api_ca_cert=api-ca.crt --vault-id vault-id
 ```
 
+**Policies**
+
+The ansible playbook creates the namespaces **policies** where policies will be added
 
 
