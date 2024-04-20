@@ -14,7 +14,15 @@ To intall ansible core components use the following command in the host where th
 ```
 sudo python3 -m pip install ansible
 ```
-Update the kubernetes core andible modules, run this command as the user who will run the playbooks:
+Check the ansible modules and check if the kubernetes.core collection is installed:
+
+```
+ansible-galaxy collection list
+...
+kubernetes.core               1.2.1 
+...
+```
+If the [version is old](https://galaxy.ansible.com/ui/repo/published/kubernetes/core/), like in this case, update the kubernetes core andible modules, run this command as the user who will run the playbooks:
 ```
 ansible-galaxy collection install kubernetes.core --upgrade
 ```
