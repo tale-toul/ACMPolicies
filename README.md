@@ -28,6 +28,11 @@ Collection      Version
 --------------- -------
 kubernetes.core 3.0.1
 ```
+Install the kubernetes python libraries:
+```
+sudo python3 -m pip install kubernetes
+```
+
 **Prepare for playbook execution**
 
 In order for ansible to stablish a secure connections with the Openshift API, the k8s ansible modules need access to the root CA certificate used by the cluster's API service. Obtain the CA bundle running the following command.
@@ -55,7 +60,7 @@ $ echo "token: sha256~roxev5_y0w4o-VjSadl3tiTkXqSOVhCRMvmV-K3xpfw" > group_vars/
 $ pwmake 128 > vault-id
 $ ansible-vault encrypt --vault-id vault-id group_vars/user_credentials.vault
 ```
-The vault-id is passed as an argument to the playbook later.
+The vault-id file is passed as an argument to the playbook later.
 
 The playbook needs the API entrypoint of the Openshift cluter. Assign the value to the ansible variable **api_entrypoint**. The value can be obtained running the following command:
 ```
