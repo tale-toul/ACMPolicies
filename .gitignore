@@ -1,3 +1,4 @@
 .*.swp
 *vault-id
 *user_credentials.vault
+Ansible/api-ca.crt

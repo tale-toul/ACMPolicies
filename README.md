@@ -64,7 +64,7 @@ token: sha256~roxev5_y0w4o-VjSadl3tiTkXqSOVhCRMvmV-K3xpfw
 The above file should be encrypted with ansible-vault.  Make sure to generate the vault-id file in the Ansible directory:
 ```
 $ cd Ansible
-$ echo "token: sha256~roxev5_y0w4o-VjSadl3tiTkXqSOVhCRMvmV-K3xpfw" > group_vars/user_credentials.vault
+$ echo "token: $(oc whoami -t)" > group_vars/user_credentials.vault
 $ pwmake 128 > vault-id
 $ ansible-vault encrypt --vault-id vault-id group_vars/user_credentials.vault
 ```

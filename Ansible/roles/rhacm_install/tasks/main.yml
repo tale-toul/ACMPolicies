@@ -17,42 +17,43 @@
     api_key: "{{ token }}"
     definition: "{{ lookup('template', 'subscription.yaml') }}" 
     state: "present"
-- block:
-    - name: Get Install Plan
-      k8s_info:
-        api_key: "{{ token }}"
-        api_version: operators.coreos.com/v1alpha1
-        kind: "InstallPlan"
-        namespace: "open-cluster-management"
-      register: _installplan_rhacm
-      until:
-        - _installplan_rhacm.resources[0].status.phase is defined
-        - _installplan_rhacm.resources[0].spec.clusterServiceVersionNames[0] == "{{ rhacm_subs_version }}"
-      retries: 14
-      delay: 4
-  rescue:
-    - name: No install plan found as expected
-      debug: 
-        msg: "No install plan found or install plan with the wrong version number. Expected version was {{ rhacm_subs_version }}, found {{ _installplan_rhacm.resources[0].spec.clusterServiceVersionNames[0] }}"
-    - meta: end_play
-- name: Verify that there is only one install plan available
-  assert:
-    that:
-      - _installplan_rhacm.resources | length == 1
-    fail_msg: "There is ore than one (1) install plan for the RHACM operator.  Probably an update for the operator is available"
+- name: Get Install Plan List
+  k8s_info:
+    api_key: "{{ token }}"
+    api_version: operators.coreos.com/v1alpha1
+    kind: "InstallPlan"
+    namespace: "open-cluster-management"
+  register: _installplan_rhacm_list
+  until:
+    - _installplan_rhacm_list.resources[0].status.phase is defined
+  retries: 14
+  delay: 4
+- name: Get Target Install Plan Name
+  set_fact:
+    target_installplan_name: "{{ item.metadata.name }}"
+  loop: "{{ _installplan_rhacm_list.resources }}"
+  when: item.spec.clusterServiceVersionNames[0] == "{{ rhacm_subs_version }}"
+- name: Get Target Install Plan
+  k8s_info:
+    api_key: "{{ token }}"
+    api_version: operators.coreos.com/v1alpha1
+    kind: "InstallPlan"
+    namespace: "open-cluster-management"
+    name: "{{ target_installplan_name }}"
+  register: _installplan_target_rhacm
 - name: Approve Install Plan
   kubernetes.core.k8s_json_patch:
     api_key: "{{ token }}"
     api_version: operators.coreos.com/v1alpha1
     kind: "InstallPlan"
     namespace: "open-cluster-management"
-    name: "{{ _installplan_rhacm.resources[0].metadata.name }}"
+    name: "{{ target_installplan_name }}"
     patch:
      - op: replace
        path: /spec/approved
        value: true
   when:
-    - _installplan_rhacm.resources[0].status.phase == "RequiresApproval"
+    - _installplan_target_rhacm.resources[0].status.phase == "RequiresApproval"
 - name: Get ClusterServiceVersion
   k8s_info:
     api_key: "{{ token }}"
