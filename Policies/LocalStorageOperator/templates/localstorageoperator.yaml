@@ -17,7 +17,7 @@ spec:
       metadata:
         name: local-storage-namespace
       spec:
-        pruneObjectBehavior: DeleteIfCreated
+        pruneObjectBehavior: None
         remediationAction: enforce
         severity: high
         object-templates:
@@ -39,6 +39,7 @@ spec:
       metadata:
         name: local-storage-operator-group
       spec:
+        pruneObjectBehavior: None
         remediationAction: enforce
         severity: high
         object-templates:
@@ -64,6 +65,7 @@ spec:
       metadata:
         name: local-storage-subscription
       spec:
+        pruneObjectBehavior: None
         remediationAction: enforce
         severity: high
         object-templates:
@@ -75,12 +77,92 @@ spec:
               name: local-storage-operator
               namespace: openshift-local-storage
             spec:
-              channel: stable
+              channel: {{hub fromConfigMap "policies" "local-storage-operator-init" "channel" hub}}
               installPlanApproval: Manual
               name: local-storage-operator
               source: redhat-operators
               sourceNamespace: openshift-marketplace
-              startingCSV: local-storage-operator.v4.14.0-202403261739
+              startingCSV: {{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}
+#Approve install plan
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: local-storage-subscription
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: local-storage-operator-installplan-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: InstallPlan
+            metadata:
+              namespace: openshift-local-storage
+            spec:
+              clusterServiceVersionNames:
+                - {{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}
+            status:
+              phase: RequiresApproval
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: local-storage-operator-installplan-check
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: local-storage-operator-installplan-approve
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: InstallPlan
+            metadata:
+              namespace: openshift-local-storage
+            spec:
+              clusterServiceVersionNames:
+                - {{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}
+              approved: true
+#Check the CSV
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: local-storage-operator-installplan-approve
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: local-storage-operator-CSV-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ClusterServiceVersion
+            metadata:
+              name: {{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}
+              namespace: openshift-local-storage
+            status:
+              phase: Succeeded 
 ---
 apiVersion: cluster.open-cluster-management.io/v1beta1 
 kind: Placement

@@ -2,18 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-namespace: ghost
-
-image:
-  repository: docker.io/ghost
-  tag: "5.75.1"
-
-service:
-  port: 2368
-
-route:
-  hostname: ghost
-
-pvc:
-  requests:
-    storage: 101Mi 
+subscription:
+  channel: "stable"
+  startingCSV: "local-storage-operator.v4.14.0-202403261739"
