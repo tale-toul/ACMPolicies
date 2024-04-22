@@ -130,18 +130,20 @@ spec:
         pruneObjectBehavior: None
         remediationAction: enforce
         severity: high
-        object-templates:
-        - complianceType: musthave
-          objectDefinition:
-            apiVersion: operators.coreos.com/v1alpha1
-            kind: InstallPlan
-            metadata:
-              namespace: openshift-local-storage
-              name: '{{ (lookup "operators.coreos.com/v1alpha1" "Subscription" "openshift-local-storage" "local-storage-operator").status.installplan.name }}'
-            spec:
-              clusterServiceVersionNames:
-                - '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
-              approved: true
+        object-templates-raw: |
+          {{- range (lookup "operators.coreos.com/v1alpha1" "InstallPlan" "openshift-local-storage" "").items }}
+          {{- if eq (index .spec.clusterServiceVersionNames 0) "{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}" }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: operators.coreos.com/v1alpha1
+                kind: InstallPlan
+                metadata:
+                  namespace: openshift-local-storage
+                  name: '{{ (lookup "operators.coreos.com/v1alpha1" "Subscription" "openshift-local-storage" "local-storage-operator").status.installplan.name }}'
+                spec:
+                  approved: true
+          {{- end }}
+          {{- end }}
 ##Check the CSV
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
