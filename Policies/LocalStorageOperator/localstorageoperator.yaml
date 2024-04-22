@@ -111,7 +111,7 @@ spec:
                 kind: InstallPlan
                 metadata:
                   namespace: openshift-local-storage
-                  name: '{{ (lookup "operators.coreos.com/v1alpha1" "Subscription" "openshift-local-storage" "local-storage-operator").status.installplan.name }}'
+                  name: '{{ .metadata.name }}'
                 spec:
                   approved: true
           {{- end }}

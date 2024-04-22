@@ -104,6 +104,10 @@ Run the ansible playbook, make sure to assing the values obtained in the steps b
 ```
 ansible-playbook -vvv ocp-initialization.yaml -e api_entrypoint="https://api.cluster-bhj4z.bhj4z.sandbox1490.opentlc.com:6443" -e api_ca_cert=api-ca.crt --vault-id vault-id
 ```
+The playbook takes a while to complete, specially in the task that waits for multi cluster hub to install, to watch the progress list the pods with the following command:
+```
+watch -n4 "oc get pods"
+```
 
 **Policies Namespace**
 
@@ -153,5 +157,13 @@ Enable the policy
 ```
 oc patch -n policies policy local-storage-operator-install --type=merge -p '{"spec":{"disabled":false}}'
 ```
+Follow the policy while it is bein applied in the web console.  Select **All Clusters**-> **Governance**->**Policies**.
+![Governance Policies](images/GovernancePolicies.png)
 
+Click on the policy (local-storage-operator-install) -> Results
+![Policiy Results](images/PolicyResults.png)
 
+Disable the policy once it has succeeded and has no Violations. This is a one time policy, once the operator is installed there is no need to be applying the policy all the time.
+```
+oc patch -n policies policy local-storage-operator-install --type=merge -p '{"spec":{"disabled":true}}'
+```
