@@ -107,11 +107,44 @@ ansible-playbook -vvv ocp-initialization.yaml -e api_entrypoint="https://api.clu
 
 **Policies Namespace**
 
-The ansible playbook creates the namespaces **policies** where policies will be added
-
-## Policies
-
 References:
 
 * [Governance](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.10/html/governance/governance#policy-overview)
 * [Placement](https://open-cluster-management.io/concepts/placement/)
+
+The ansible playbook creates the namespaces **policies** where policies will be added
+
+**Cluster Set Binding**
+
+The playbook creates a cluster set binding in the policies namespace.  This is required so that policies can be "placed" into the managed clusters.
+[According to the documentation](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.10/html-single/clusters/index#creating-managedclustersetbinding): "A ManagedClusterSetBinding resource binds a ManagedClusterSet resource to a namespace. Applications and policies that are created in the same namespace can only access clusters that are included in the bound managed cluster set resource."
+
+## Policies
+
+Configuration changes in the cluster will be applyied using ACM policies.
+
+Whenever a policy needs to read some configuration data, like the particular version of an operator to be installed, it will read it from a config map or a secret on the hub cluster, that configmap or secret can be created by the cluster administrator or by an external process like a CI/CD pipeline, and then the policy can be applied.  
+
+The policies in this repository support the use of kustomize.
+
+All policy definitions are disabled by default.
+
+### Local Storage Operator
+
+This is a one time configuration policy.  Apply the policy untill the operator is fully installed, the disable it or modify the placement object so it is not watching the cluster anymore.
+
+The config map **init-configmap.yaml** contains the channel and starting version to install the operator. 
+
+Edit the config map file to set the channel and initial version to be installed
+
+Log in the Openshift cluster
+```
+oc login -u admin -p XXXXXX https://api.cluster-fqgtk.dynamic.redhatworkshops.io:6443
+```
+Apply the policy
+```
+oc apply -k Policies/LocalStorageOperator
+```
+
+
+

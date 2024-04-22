@@ -1,7 +1,0 @@
-# Default values for local-storage-operator
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
-subscription:
-  channel: "stable"
-  startingCSV: "local-storage-operator.v4.14.0-202403261739"

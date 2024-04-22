@@ -4,5 +4,5 @@ metadata:
   name: local-storage-operator-init
   namespace: policies
 data:
-  channel: {{ .Values.subscription.channel }}
-  startingCSV: {{ .Values.subscription.startingCSV }}
+  channel: stable
+  startingCSV: local-storage-operator.v4.14.0-202403261739

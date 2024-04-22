@@ -1,0 +1,5 @@
+resources:
+  - init-configmap.yaml
+  - localstorageoperator-placement-bindin.yaml
+  - localstorageoperator-placement.yaml
+  - localstorageoperator.yaml

@@ -5,12 +5,13 @@ metadata:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
     policy.open-cluster-management.io/standards: NIST SP 800-53
-		policy.open-cluster-management.io/description: Local Storage Operator Installation
+    policy.open-cluster-management.io/description: Local Storage Operator Installation
   name: local-storage-operator-install
   namespace: policies
 spec:
   disabled: true
   policy-templates:
+#Create namespace
   - objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
@@ -27,6 +28,7 @@ spec:
             kind: Namespace
             metadata:
               name: openshift-local-storage
+#Create the operator group, when the namespace is ready
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
@@ -53,6 +55,7 @@ spec:
             spec:
               targetNamespaces:
                 - openshift-local-storage
+##Create the subscription when the operator group is ready
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
@@ -77,13 +80,13 @@ spec:
               name: local-storage-operator
               namespace: openshift-local-storage
             spec:
-              channel: {{hub fromConfigMap "policies" "local-storage-operator-init" "channel" hub}}
+              channel: '{{hub fromConfigMap "policies" "local-storage-operator-init" "channel" hub}}'
               installPlanApproval: Manual
               name: local-storage-operator
               source: redhat-operators
               sourceNamespace: openshift-marketplace
-              startingCSV: {{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}
-#Approve install plan
+              startingCSV: '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
+##Detect the install plan when the subscription is ready
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
@@ -108,9 +111,10 @@ spec:
               namespace: openshift-local-storage
             spec:
               clusterServiceVersionNames:
-                - {{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}
+                - '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
             status:
               phase: RequiresApproval
+##Approve the Install plan when it has been detected
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
@@ -135,9 +139,9 @@ spec:
               namespace: openshift-local-storage
             spec:
               clusterServiceVersionNames:
-                - {{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}
+                - '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
               approved: true
-#Check the CSV
+##Check the CSV
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
@@ -159,40 +163,7 @@ spec:
             apiVersion: operators.coreos.com/v1alpha1
             kind: ClusterServiceVersion
             metadata:
-              name: {{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}
+              name: '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
               namespace: openshift-local-storage
             status:
               phase: Succeeded 
----
-apiVersion: cluster.open-cluster-management.io/v1beta1 
-kind: Placement
-metadata:
-  name: local-storage-placement
-  namespace: policies
-spec:
-  predicates:
-    - requiredClusterSelector:
-        labelSelector:
-          matchExpressions:
-          - key: vendor
-            operator: In
-            values:
-            - OpenShift
-          - key: name
-            operator: In
-            values:
-            - local-cluster
----
-apiVersion: policy.open-cluster-management.io/v1
-kind: PlacementBinding
-metadata:
-  name: local-storage-placementbinding
-  namespace: policies
-placementRef:
-  apiGroup: cluster.open-cluster-management.io/v1beta1
-  kind: Placement
-  name: local-storage-placement
-subjects:
-- apiGroup: policy.open-cluster-management.io
-  kind: Policy
-  name: local-storage-operator-install
