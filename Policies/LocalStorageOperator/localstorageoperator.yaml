@@ -87,38 +87,38 @@ spec:
               sourceNamespace: openshift-marketplace
               startingCSV: '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
 ##Detect the install plan when the subscription is ready
+#  - extraDependencies:
+#     - apiVersion: policy.open-cluster-management.io/v1
+#       kind: ConfigurationPolicy
+#       name: local-storage-subscription
+#       namespace: ""
+#       compliance: Compliant
+#    objectDefinition:
+#      apiVersion: policy.open-cluster-management.io/v1
+#      kind: ConfigurationPolicy
+#      metadata:
+#        name: local-storage-operator-installplan-check
+#      spec:
+#        pruneObjectBehavior: None
+#        remediationAction: inform
+#        severity: high
+#        object-templates:
+#        - complianceType: musthave
+#          objectDefinition:
+#            apiVersion: operators.coreos.com/v1alpha1
+#            kind: InstallPlan
+#            metadata:
+#              namespace: openshift-local-storage
+#            spec:
+#              clusterServiceVersionNames:
+#                - '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
+#            status:
+#              phase: RequiresApproval
+#Approve the Install plan when it has been detected
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
        name: local-storage-subscription
-       namespace: ""
-       compliance: Compliant
-    objectDefinition:
-      apiVersion: policy.open-cluster-management.io/v1
-      kind: ConfigurationPolicy
-      metadata:
-        name: local-storage-operator-installplan-check
-      spec:
-        pruneObjectBehavior: None
-        remediationAction: inform
-        severity: high
-        object-templates:
-        - complianceType: musthave
-          objectDefinition:
-            apiVersion: operators.coreos.com/v1alpha1
-            kind: InstallPlan
-            metadata:
-              namespace: openshift-local-storage
-            spec:
-              clusterServiceVersionNames:
-                - '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
-            status:
-              phase: RequiresApproval
-##Approve the Install plan when it has been detected
-  - extraDependencies:
-     - apiVersion: policy.open-cluster-management.io/v1
-       kind: ConfigurationPolicy
-       name: local-storage-operator-installplan-check
        namespace: ""
        compliance: Compliant
     objectDefinition:
@@ -137,6 +137,7 @@ spec:
             kind: InstallPlan
             metadata:
               namespace: openshift-local-storage
+              name: '{{ (lookup "operators.coreos.com/v1alpha1" "Subscription" "openshift-local-storage" "local-storage-operator").status.installplan.name }}'
             spec:
               clusterServiceVersionNames:
                 - '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
@@ -152,7 +153,7 @@ spec:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-operator-CSV-check
+        name: local-storage-operator-csv-check
       spec:
         pruneObjectBehavior: None
         remediationAction: inform

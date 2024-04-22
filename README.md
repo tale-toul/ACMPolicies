@@ -145,6 +145,13 @@ Apply the policy
 ```
 oc apply -k Policies/LocalStorageOperator
 ```
-
+Verify that the policy is being placed on the expected clusters:
+```
+oc get placements -n policies -o yaml
+```
+Enable the policy
+```
+oc patch -n policies policy local-storage-operator-install --type=merge -p '{"spec":{"disabled":false}}'
+```
 
 
