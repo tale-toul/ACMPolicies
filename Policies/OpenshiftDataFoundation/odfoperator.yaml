@@ -103,18 +103,20 @@ spec:
         remediationAction: enforce
         severity: high
         object-templates-raw: |
-          {{- range (lookup "operators.coreos.com/v1alpha1" "InstallPlan" "openshift-storage" "").items }}
-          {{- if eq (index .spec.clusterServiceVersionNames 0) "{{hub fromConfigMap "policies" "odf-operator-init" "startingCSV" hub}}" }}
+          {{- range $installplan := (lookup "operators.coreos.com/v1alpha1" "InstallPlan" "openshift-storage" "").items }}
+            {{- range $installplan.spec.clusterServiceVersionNames }}
+            {{- if eq . "{{hub fromConfigMap "policies" "odf-operator-init" "startingCSV" hub}}" }}
             - complianceType: musthave
               objectDefinition:
                 apiVersion: operators.coreos.com/v1alpha1
                 kind: InstallPlan
                 metadata:
                   namespace: openshift-storage
-                  name: '{{ .metadata.name }}'
+                  name: '{{ $installplan.metadata.name }}'
                 spec:
                   approved: true
-          {{- end }}
+            {{- end }}
+            {{- end }}
           {{- end }}
 #Check the CSV
   - extraDependencies:

@@ -213,3 +213,13 @@ Disable the policy once it has succeeded and has no Violations. This is a one ti
 ```
 oc patch -n policies policy odf-operator-install --type=merge -p '{"spec":{"disabled":true}}'
 ```
+
+### Updating Operators
+
+The operator version is found in the config map **init-configmap.yaml**, to update an operator enter the new channel and version in the configmap, the policy will read the new values and apply the changes.  If the policy was disabled, it must be enabled first.
+
+In the following example the version is updated, but the channel is the same.
+```
+oc set data cm/odf-operator-init -n policies startingCSV=odf-operator.v4.14.6-rhodf 
+```
+Alternatively the configmap definition can be changed in the file and applied to the cluster
