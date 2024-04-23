@@ -1,0 +1,5 @@
+resources:
+  - init-configmap.yaml
+  - odfoperator-placement.yaml
+  - odfoperator.yaml
+  - odf-placement-binding.yaml

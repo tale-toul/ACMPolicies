@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odf-operator-init
+  namespace: policies
+data:
+  channel: stable-4.14
+  startingCSV: odf-operator.v4.14.6-rhodf

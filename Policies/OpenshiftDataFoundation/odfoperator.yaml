@@ -5,8 +5,8 @@ metadata:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
     policy.open-cluster-management.io/standards: NIST SP 800-53
-    policy.open-cluster-management.io/description: Local Storage Operator Installation
-  name: local-storage-operator-install
+    policy.open-cluster-management.io/description: Openshift Data Foundation Operator Installation
+  name: odf-operator-install
   namespace: policies
 spec:
   disabled: true
@@ -16,7 +16,7 @@ spec:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-namespace
+        name: odf-namespace
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -27,19 +27,19 @@ spec:
             apiVersion: v1
             kind: Namespace
             metadata:
-              name: openshift-local-storage
+              name: openshift-storage
 #Create the operator group, when the namespace is ready
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: local-storage-namespace
+       name: odf-namespace
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-operator-group
+        name: odf-operator-group
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -50,23 +50,23 @@ spec:
             apiVersion: operators.coreos.com/v1
             kind: OperatorGroup
             metadata:
-              name: local-operator-group
-              namespace: openshift-local-storage
+              name: odf-operator-group
+              namespace: openshift-storage
             spec:
               targetNamespaces:
-                - openshift-local-storage
+                - openshift-storage
 #Create the subscription when the operator group is ready
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: local-storage-operator-group
+       name: odf-operator-group
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-subscription
+        name: odf-subscription
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -77,40 +77,40 @@ spec:
             apiVersion: operators.coreos.com/v1alpha1
             kind: Subscription
             metadata:
-              name: local-storage-operator
-              namespace: openshift-local-storage
+              name: odf-operator-subs
+              namespace: openshift-storage
             spec:
-              channel: '{{hub fromConfigMap "policies" "local-storage-operator-init" "channel" hub}}'
+              channel: '{{hub fromConfigMap "policies" "odf-operator-init" "channel" hub}}'
               installPlanApproval: Manual
-              name: local-storage-operator
+              name: odf-operator
               source: redhat-operators
               sourceNamespace: openshift-marketplace
-              startingCSV: '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
+              startingCSV: '{{hub fromConfigMap "policies" "odf-operator-init" "startingCSV" hub}}'
 #Approve the Install plan when it has been detected
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: local-storage-subscription
+       name: odf-subscription
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-operator-installplan-approve
+        name: odf-operator-installplan-approve
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
         severity: high
         object-templates-raw: |
-          {{- range (lookup "operators.coreos.com/v1alpha1" "InstallPlan" "openshift-local-storage" "").items }}
-          {{- if eq (index .spec.clusterServiceVersionNames 0) "{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}" }}
+          {{- range (lookup "operators.coreos.com/v1alpha1" "InstallPlan" "openshift-storage" "").items }}
+          {{- if eq (index .spec.clusterServiceVersionNames 0) "{{hub fromConfigMap "policies" "odf-operator-init" "startingCSV" hub}}" }}
             - complianceType: musthave
               objectDefinition:
                 apiVersion: operators.coreos.com/v1alpha1
                 kind: InstallPlan
                 metadata:
-                  namespace: openshift-local-storage
+                  namespace: openshift-storage
                   name: '{{ .metadata.name }}'
                 spec:
                   approved: true
@@ -120,14 +120,14 @@ spec:
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: local-storage-operator-installplan-approve
+       name: odf-operator-installplan-approve
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-operator-csv-check
+        name: odf-operator-csv-check
       spec:
         pruneObjectBehavior: None
         remediationAction: inform
@@ -138,7 +138,7 @@ spec:
             apiVersion: operators.coreos.com/v1alpha1
             kind: ClusterServiceVersion
             metadata:
-              name: '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
-              namespace: openshift-local-storage
+              name: '{{hub fromConfigMap "policies" "odf-operator-init" "startingCSV" hub}}'
+              namespace: openshift-storage
             status:
               phase: Succeeded 

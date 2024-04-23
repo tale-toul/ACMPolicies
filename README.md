@@ -78,7 +78,21 @@ https://api.cluster-lh48t.lh48t.sandbox180.opentlc.com:6443
 
 Define the RHACM operator channel and version.  For the channel, the default value is defined in the variable **rhacm-subs-channel**, in the file **Ansible/roles/rhacm_install/defaults/main.yml**.  For the version, the value is defined in the variable **rhacm-subs-version** defined in the same file as before.
 
+### Finding the operator channel and version
+
 The channel and version information can be obtained using the oc mirror plugin:
+
+To obtain the list of catalogs use the command:
+```
+oc-mirror list operators --catalogs --version=4.15 > catalogs_4.15
+```
+
+To find the available operators (packages) in a catalog use the command:
+```
+oc-mirror list operators --catalog=registry.redhat.io/redhat/redhat-operator-index:v4.15 > redhat_package_4.15
+```
+
+To the available channels for a particular operator, along with the latest operator version for each channel, use the command:
 ```
 $ oc mirror list operators --catalog=registry.redhat.io/redhat/redhat-operator-index:v4.14 --package=advanced-cluster-management
 NAME                         DISPLAY NAME                                DEFAULT CHANNEL
@@ -88,13 +102,16 @@ PACKAGE                      CHANNEL       HEAD
 advanced-cluster-management  release-2.10  advanced-cluster-management.v2.10.1
 advanced-cluster-management  release-2.8   advanced-cluster-management.v2.8.6
 advanced-cluster-management  release-2.9   advanced-cluster-management.v2.9.3
+```
 
+To find the versions in a particular channel, use the following command
+```
 $ oc mirror list operators --catalog=registry.redhat.io/redhat/redhat-operator-index:v4.14 --package=advanced-cluster-management --channel=release-2.10
 VERSIONS
 2.10.0
 2.10.1
 ```
-For example, to install version 2.10.1 the following values should be used:
+The complete version string is formed using the operator (package) name plus the verion number.  For example, to install version 2.10.1 the following values should be used:
 ```
 rhacm_subs_channel: release-2.10
 rhacm_subs_version: advanced-cluster-management.v2.10.0
@@ -135,9 +152,9 @@ All policy definitions are disabled by default.
 
 ### Local Storage Operator
 
-This is a one time configuration policy.  Apply the policy untill the operator is fully installed, the disable it or modify the placement object so it is not watching the cluster anymore.
+This is a one time configuration policy.  Apply the policy until the operator is fully installed, then disable it or modify the placement object so it is not watching the cluster anymore.
 
-The config map **init-configmap.yaml** contains the channel and starting version to install the operator. 
+The config map **init-configmap.yaml** contains the channel and starting version of the operator. 
 
 Edit the config map file to set the channel and initial version to be installed
 
@@ -167,3 +184,19 @@ Disable the policy once it has succeeded and has no Violations. This is a one ti
 ```
 oc patch -n policies policy local-storage-operator-install --type=merge -p '{"spec":{"disabled":true}}'
 ```
+
+### Openshift Data Foundation Operator
+
+This is a one time configuration policy.  Apply the policy until the operator is fully installed, then disable it or modify the placement object so it is not watching the cluster anymore.
+
+The config map **init-configmap.yaml** contains the channel and starting version of the operator. 
+
+To find the channel and version to install use the instructions at [Finding the operator channel and version](#finding-the-operator-channel-and-version)
+
+Edit the config map file to set the channel and initial version to be installed
+
+Log in the Openshift cluster
+```
+oc login -u admin -p XXXXXX https://api.cluster-fqgtk.dynamic.redhatworkshops.io:6443
+```
+Apply the policy
