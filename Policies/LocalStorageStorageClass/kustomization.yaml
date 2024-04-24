@@ -1,0 +1,4 @@
+resources:
+  - localstoragesc.yaml
+  - localstoragesc-placement-binding.yaml
+  - localstoragesc-placement.yaml

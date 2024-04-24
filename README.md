@@ -174,7 +174,12 @@ Enable the policy
 ```
 oc patch -n policies policy local-storage-operator-install --type=merge -p '{"spec":{"disabled":false}}'
 ```
-Follow the policy while it is being applied in the web console.  Select **All Clusters**-> **Governance**->**Policies**.
+Follow the policy while it is being applied
+```
+watch -n4 "oc get og,subs,ip,csv"
+```
+
+Also in the web console.  Select **All Clusters**-> **Governance**->**Policies**.
 ![Governance Policies](images/GovernancePolicies.png)
 
 Click on the policy (local-storage-operator-install) -> Results
@@ -184,6 +189,10 @@ Disable the policy once it has succeeded and has no Violations. This is a one ti
 ```
 oc patch -n policies policy local-storage-operator-install --type=merge -p '{"spec":{"disabled":true}}'
 ```
+
+### Local Storage Storage Class
+
+This policy creates the storage class based on the disk devices existing in the nodes.
 
 ### Openshift Data Foundation Operator
 
@@ -207,7 +216,7 @@ Enable the policy
 ```
 oc patch -n policies policy odf-operator-install --type=merge -p '{"spec":{"disabled":false}}'
 ```
-Follow the policy while it is being applied in the web console.  See [Local Storage Operator](#local-storage-operator) for more details.
+Follow the policy while it is being applied.  See [Local Storage Operator](#local-storage-operator) for more details.
 
 Disable the policy once it has succeeded and has no Violations. This is a one time policy, once the operator is installed there is no need to be applying the policy all the time.
 ```
