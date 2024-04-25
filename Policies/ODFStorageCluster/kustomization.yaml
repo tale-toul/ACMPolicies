@@ -1,0 +1,4 @@
+resources:
+  - odfstoragecluster-placement-binding.yaml
+  - odfstoragecluster-placement.yaml
+  - odfstoragecluster.yaml

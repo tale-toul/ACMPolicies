@@ -1,0 +1,231 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/description: Create ODF Storage Cluster
+  name: odf-storagecluster
+  namespace: policies
+spec:
+  disabled: true
+  dependencies:
+  - apiVersion: policy.open-cluster-management.io/v1
+    compliance: Compliant
+    kind: Policy
+    name: local-storage-operator-install
+    namespace: policies
+  - apiVersion: policy.open-cluster-management.io/v1
+    compliance: Compliant
+    kind: Policy
+    name: odf-operator-install
+    namespace: policies
+  policy-templates:
+#Label All Nodes for ODF
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: odf-storagecluster-label
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates-raw: |
+          {{- range (lookup "v1" "Node" "" "").items }}
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: v1
+              kind: Node
+              metadata:
+                labels:
+                  cluster.ocs.openshift.io/openshift-storage: ""
+                name: {{ .metadata.name }}
+          {{- end }}
+#Discover Local Disks
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: odf-storagecluster-label
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: odf-storagecluster-discover-volume
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: local.storage.openshift.io/v1alpha1
+            kind: LocalVolumeDiscovery
+            metadata:
+              name: auto-discover-devices
+              namespace: openshift-local-storage
+            spec:
+              nodeSelector:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: cluster.ocs.openshift.io/openshift-storage
+                    operator: Exists
+#Create Local Volume Set
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: odf-storagecluster-discover-volume
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: odf-storagecluster-volume-set
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: local.storage.openshift.io/v1alpha1
+            kind: LocalVolumeSet
+            metadata:
+              name: local-volumeset
+              namespace: openshift-local-storage
+            spec:
+              nodeSelector:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: cluster.ocs.openshift.io/openshift-storage
+                    operator: Exists
+              storageClassName: local-volumeset
+              volumeMode: Block
+              deviceInclusionSpec:
+                deviceMechanicalProperties:
+                - NonRotational
+                deviceTypes:
+                - disk
+                minSize: 100Gi
+#Check for Storage Class existence
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: odf-storagecluster-volume-set
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: odf-storagecluster-check-storage-class
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: storage.k8s.io/v1
+            kind: StorageClass
+            metadata:
+              name: local-volumeset
+#Create Storage Cluster
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: odf-storagecluster-check-storage-class
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: odf-storagecluster-create
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: ocs.openshift.io/v1
+            kind: StorageCluster
+            metadata:
+              name: ocs-storagecluster
+              namespace: openshift-storage
+            spec:
+              arbiter: {}
+              encryption:
+                kms: {}
+              externalStorage: {}
+              flexibleScaling: true
+              managedResources:
+                cephBlockPools: {}
+                cephCluster: {}
+                cephConfig: {}
+                cephDashboard: {}
+                cephFilesystems: {}
+                cephNonResilientPools: {}
+                cephObjectStoreUsers: {}
+                cephObjectStores: {}
+                cephRBDMirror: {}
+                cephToolbox: {}
+              mirroring: {}
+              monDataDirHostPath: /var/lib/rook
+              network:
+                connections:
+                  encryption: {}
+                multiClusterService: {}
+              nodeTopologies: {}
+              storageDeviceSets:
+              - config: {}
+                count: '{{ (lookup "local.storage.openshift.io/v1alpha1" "LocalVolumeSet" "openshift-local-storage" "local-volumeset").status.totalProvisionedDeviceCount | toInt }}'
+                dataPVCTemplate:
+                  metadata: {}
+                  spec:
+                    accessModes:
+                    - ReadWriteOnce
+                    resources:
+                      requests:
+                        storage: "1"
+                    storageClassName: local-volumeset
+                    volumeMode: Block
+                  status: {}
+                name: ocs-deviceset-local-volumeset
+                placement: {}
+                preparePlacement: {}
+                replica: 1
+                resources: {}
+#Check Storage Cluster
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: odf-storagecluster-create
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: odf-storagecluster-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: ocs.openshift.io/v1
+            kind: StorageCluster
+            metadata:
+              name: ocs-storagecluster
+              namespace: openshift-storage
+            status:
+              failureDomain: host
+              failureDomainKey: kubernetes.io/hostname
+              phase: Ready
