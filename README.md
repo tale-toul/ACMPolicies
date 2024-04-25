@@ -48,7 +48,7 @@ In order for ansible to stablish a secure connections with the Openshift API, th
 Make sure the resulting file is stored in the Ansible directory:
 
 ```
-$ oc rsh -n openshift-authentication <oauth-openshift-pod> cat /run/secrets/kubernetes.io/serviceaccount/ca.crt > Ansible/api-ca.crt
+oc rsh -n openshift-authentication $(oc get po -o name -n openshift-authentication|head -1) cat /run/secrets/kubernetes.io/serviceaccount/ca.crt > Ansible/api-ca.crt
 ```
 The playbook requires cluster admin credentials so it can make configuration changes to the cluster. The credentials are expected in the file **Ansible/group_vars/user_credentials.vault**.
 
@@ -116,6 +116,8 @@ The complete version string is formed using the operator (package) name plus the
 rhacm_subs_channel: release-2.10
 rhacm_subs_version: advanced-cluster-management.v2.10.0
 ```
+
+### Running the playbook
 
 Run the ansible playbook, make sure to assing the values obtained in the steps before for the variables: api_entrypoint and api_ca_cert.  And reference the **vault-id** file.
 ```
@@ -190,10 +192,6 @@ Disable the policy once it has succeeded and has no Violations. This is a one ti
 oc patch -n policies policy local-storage-operator-install --type=merge -p '{"spec":{"disabled":true}}'
 ```
 
-### Local Storage Storage Class
-
-This policy creates the storage class based on the disk devices existing in the nodes.
-
 ### Openshift Data Foundation Operator
 
 This is a one time configuration policy.  Apply the policy until the operator is fully installed, then disable it or modify the placement object so it is not watching the cluster anymore.
@@ -221,6 +219,31 @@ Follow the policy while it is being applied.  See [Local Storage Operator](#loca
 Disable the policy once it has succeeded and has no Violations. This is a one time policy, once the operator is installed there is no need to be applying the policy all the time.
 ```
 oc patch -n policies policy odf-operator-install --type=merge -p '{"spec":{"disabled":true}}'
+```
+
+### ODF Storage Cluster
+
+This policy creates the storage cluster based on the disk devices existing in the nodes and made available by the Local Storage Operator.
+
+This policy depends on the compliant status of the policies: Local Storage Operator and Openshift Data Foundation Operator.
+
+Log in the Openshift cluster
+```
+oc login -u admin -p XXXXXX https://api.cluster-fqgtk.dynamic.redhatworkshops.io:6443
+```
+Apply the policy
+```
+oc apply -k Policies/ODFStorageCluster
+```
+Enable the policy
+```
+oc patch -n policies policy odf-storagecluster --type=merge -p '{"spec":{"disabled":false}}'
+```
+Follow the policy while it is being applied.  See [Local Storage Operator](#local-storage-operator) for more details.
+
+The creation of the storage cluster takes several minutes, make sure all pods are in state **Running** or **Completed**
+```
+oc get pods -n openshift-storage
 ```
 
 ### Updating Operators
