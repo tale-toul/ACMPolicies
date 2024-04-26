@@ -11,4 +11,25 @@ metadata:
 spec:
   disabled: true
   policy-templates:
-
+#Check that the secret containing the certificate is in place
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: cert-ingress-check-secret
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates-raw: |
+          {{- $secret_data := lookup "v1" "Secret" "openshift-ingress" "ingress-tls" }}
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: ingress-tls
+                namespace: openshift-ingress
+              type: kubernetes.io/tls
+              data:
+                tls.key: '{{ index $secret_data "tls.crt" }}'
