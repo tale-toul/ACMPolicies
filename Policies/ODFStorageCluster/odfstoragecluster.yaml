@@ -21,6 +21,11 @@ spec:
     kind: Policy
     name: odf-operator-install
     namespace: policies
+  - apiVersion: policy.open-cluster-management.io/v1
+    compliance: Compliant
+    kind: Policy
+    name: master-schedulable
+    namespace: policies
   policy-templates:
 #Label All Nodes for ODF
   - objectDefinition:
@@ -229,3 +234,95 @@ spec:
               failureDomain: host
               failureDomainKey: kubernetes.io/hostname
               phase: Ready
+              conditions:
+                - message: Reconcile completed successfully
+                  reason: ReconcileCompleted
+                  status: "True"
+                  type: ReconcileComplete
+                - message: Reconcile completed successfully
+                  reason: ReconcileCompleted
+                  status: "True"
+                  type: Available
+                - message: Reconcile completed successfully
+                  reason: ReconcileCompleted
+                  status: "False"
+                  type: Progressing
+                - message: Reconcile completed successfully
+                  reason: ReconcileCompleted
+                  status: "False"
+                  type: Degraded
+                - message: Reconcile completed successfully
+                  reason: ReconcileCompleted
+                  status: "True"
+                  type: Upgradeable
+#Check for ceph rdb storage class
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: odf-storagecluster-create
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: odf-storagecluster-sc-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: storage.k8s.io/v1
+            kind: StorageClass
+            metadata:
+              name: ocs-storagecluster-ceph-rbd
+#Set ceph rdb storage class as default
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: odf-storagecluster-sc-check
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: odf-storagecluster-sc-set-default
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: storage.k8s.io/v1
+            kind: StorageClass
+            metadata:
+              name: ocs-storagecluster-ceph-rbd
+              annotations:
+                storageclass.kubernetes.io/is-default-class: "true"
+#Set any other storage class as non default
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: odf-storagecluster-sc-non-default
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates-raw: |
+          {{- range (lookup "storage.k8s.io/v1" "StorageClass" "" "").items }}
+            {{- if not (eq .metadata.name "ocs-storagecluster-ceph-rbd") }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: storage.k8s.io/v1
+                kind: StorageClass
+                metadata:
+                  name: {{ .metadata.name }}
+                  annotations:
+                    storageclass.kubernetes.io/is-default-class: "false"
+            {{- end }}
+          {{- end }}

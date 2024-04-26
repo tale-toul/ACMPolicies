@@ -43,6 +43,13 @@ sudo python3 -m pip install kubernetes
 
 **Prepare for playbook execution**
 
+Clone this git repository
+```
+git clone https://github.com/tale-toul/ACMPolicies.git
+
+cd ACMPolicies
+```
+
 In order for ansible to stablish a secure connections with the Openshift API, the k8s ansible modules need access to the root CA certificate used by the cluster's API service. Obtain the CA bundle running the following command.
 
 Make sure the resulting file is stored in the Ansible directory:
@@ -121,7 +128,7 @@ rhacm_subs_version: advanced-cluster-management.v2.10.0
 
 Run the ansible playbook, make sure to assing the values obtained in the steps before for the variables: api_entrypoint and api_ca_cert.  And reference the **vault-id** file.
 ```
-ansible-playbook -vvv ocp-initialization.yaml -e api_entrypoint="https://api.cluster-bhj4z.bhj4z.sandbox1490.opentlc.com:6443" -e api_ca_cert=api-ca.crt --vault-id vault-id
+ansible-playbook -v ocp-initialization.yaml -e api_entrypoint="https://api.cluster-bhj4z.bhj4z.sandbox1490.opentlc.com:6443" -e api_ca_cert=api-ca.crt --vault-id vault-id
 ```
 The playbook takes a while to complete, specially in the task that waits for multi cluster hub to install, to watch the progress list the pods with the following command:
 ```
@@ -223,9 +230,9 @@ oc patch -n policies policy odf-operator-install --type=merge -p '{"spec":{"disa
 
 ### ODF Storage Cluster
 
-This policy creates the storage cluster based on the disk devices existing in the nodes and made available by the Local Storage Operator.
+This policy creates the storage cluster based on the disk devices existing in the nodes and made available by the Local Storage Operator. It also sets the ocs-storagecluster-ceph-rbd storage cluster as default, and any other storage cluster as non default explicitly.
 
-This policy depends on the compliant status of the policies: Local Storage Operator and Openshift Data Foundation Operator.
+This policy depends on the compliant status of the policies: Local Storage Operator, Openshift Data Foundation Operator, Masters Schedulable
 
 Log in the Openshift cluster
 ```
@@ -244,6 +251,75 @@ Follow the policy while it is being applied.  See [Local Storage Operator](#loca
 The creation of the storage cluster takes several minutes, make sure all pods are in state **Running** or **Completed**
 ```
 oc get pods -n openshift-storage
+```
+
+### Replace Default Ingress Certificates
+
+This policy replaces the x509 certificate in the default ingress controller.
+
+Log in the Openshift cluster
+```
+oc login -u admin -p XXXXXX https://api.cluster-fqgtk.dynamic.redhatworkshops.io:6443
+```
+Apply the policy
+```
+oc apply -k Policies/ReplaceCertificateIngress
+
+```
+Enable the policy
+```
+oc patch -n policies policy cert-ingress-replace --type=merge -p '{"spec":{"disabled":false}}'
+```
+Follow the policy while it is being applied.  See [Local Storage Operator](#local-storage-operator) for more details.
+
+### Replace Default Ingress Certificates
+
+This policy replaces the x509 certificate for the API service.
+
+Log in the Openshift cluster
+```
+oc login -u admin -p XXXXXX https://api.cluster-fqgtk.dynamic.redhatworkshops.io:6443
+```
+Apply the policy
+```
+oc apply -k Policies/ReplaceCertificateApi
+
+```
+Enable the policy
+```
+oc patch -n policies policy cert-api-replace cert-ingress-replace --type=merge -p '{"spec":{"disabled":false}}'
+```
+Follow the policy while it is being applied.  See [Local Storage Operator](#local-storage-operator) for more details.
+
+### Set Masters as Schedulable
+
+Log in the Openshift cluster
+```
+oc login -u admin -p XXXXXX https://api.cluster-fqgtk.dynamic.redhatworkshops.io:6443
+```
+Apply the policy
+```
+oc apply -k Policies/MastersSchedulable
+```
+Enable the policy
+```
+oc patch -n policies policy master-schedulable --type=merge -p '{"spec":{"disabled":false}}'
+```
+Follow the policy while it is being applied.  See [Local Storage Operator](#local-storage-operator) for more details.
+This policy sets all masters as schedulable so that application pods can run in the control plane.
+
+### Enabling or Disabling all the policies
+
+To patch all the policies in a namespace run the following commands.
+
+* To **enable** all the policies:
+```
+for x in $(oc get policies -n policies -o name); do oc patch -n policies $x --type=merge -p '{"spec":{"disabled":false}}'; done
+```
+
+* To **disable** all the polcies:
+```
+for x in $(oc get policies -n policies -o name); do oc patch -n policies $x --type=merge -p '{"spec":{"disabled":true}}'; done
 ```
 
 ### Updating Operators

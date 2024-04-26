@@ -1,0 +1,4 @@
+resources:
+  - mastsched-placement-binding.yaml
+  - mastsched-placement.yaml
+  - mastsched.yaml

@@ -1,0 +1,4 @@
+resources:
+  - cert-api-placement-binding.yaml
+  - cert-api-placement.yaml
+  - cert-api.yaml

@@ -1,0 +1,4 @@
+resources:
+  - cert-ingress-placement-binding.yaml
+  - cert-ingress-placement.yaml
+  - cert-ingress.yaml
