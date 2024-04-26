@@ -21,8 +21,7 @@ spec:
         pruneObjectBehavior: None
         remediationAction: inform
         severity: high
-        object-templates-raw: |
-          {{- $secret_data := lookup "v1" "Secret" "openshift-ingress" "ingress-tls" }}
+        object-templates:
           - complianceType: musthave
             objectDefinition:
               apiVersion: v1
@@ -30,6 +29,83 @@ spec:
               metadata:
                 name: ingress-tls
                 namespace: openshift-ingress
-              type: kubernetes.io/tls
               data:
-                tls.key: '{{ index $secret_data "tls.crt" }}'
+                tls.crt: '{{ fromSecret "openshift-ingress" "ingress-tls" "tls.crt" }}'
+                tls.key: '{{ fromSecret "openshift-ingress" "ingress-tls" "tls.key" }}'
+#Update default Ingress Controller
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: cert-ingress-check-secret
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: cert-ingress-update
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operator.openshift.io/v1
+            kind: IngressController
+            metadata:
+              name: default
+              namespace: openshift-ingress-operator
+            spec:
+              defaultCertificate:
+                name: ingress-tls
+#Check default Ingress Controller
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: cert-ingress-update
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: cert-ingress-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operator.openshift.io/v1
+            kind: IngressController
+            metadata:
+              name: default
+              namespace: openshift-ingress-operator
+            spec:
+              defaultCertificate:
+                name: ingress-tls
+            status:
+              conditions:
+              - reason: Valid
+                status: "True"
+                type: Admitted
+              - status: "True"
+                type: Available
+              - status: "False"
+                type: Progressing
+              - status: "False"
+                type: Degraded
+              - message: IngressController is upgradeable.
+                reason: Upgradeable
+                status: "True"
+                type: Upgradeable
+              - message: No evaluation condition is detected.
+                reason: NoEvaluationCondition
+                status: "False"
+                type: EvaluationConditionsDetected
+              - message: Canary route checks for the default ingress controller are successful
+                reason: CanaryChecksSucceeding
+                status: "True"
+                type: CanaryChecksSucceeding
