@@ -11,7 +11,7 @@ metadata:
 spec:
   disabled: true
   policy-templates:
-#Check that the secret containing the certificate is in place
+#Check that the secret containing the certificate exists
   - objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
