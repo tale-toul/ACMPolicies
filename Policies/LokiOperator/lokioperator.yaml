@@ -5,8 +5,8 @@ metadata:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
     policy.open-cluster-management.io/standards: NIST SP 800-53
-    policy.open-cluster-management.io/description: Local Storage Operator Installation
-  name: local-storage-operator-install
+    policy.open-cluster-management.io/description: Loki Operator Installation
+  name: loki-operator-install
   namespace: policies
 spec:
   disabled: true
@@ -16,7 +16,7 @@ spec:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-namespace
+        name: loki-namespace
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -28,20 +28,20 @@ spec:
             kind: Namespace
             metadata:
               labels:
-                openshift.io/cluster-monitoring: "true"
-              name: openshift-local-storage
-#Create the operator group, when the namespace is ready
+                 openshift.io/cluster-monitoring: "true"
+              name: openshift-operators-redhat
+#Create the operator group
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: local-storage-namespace
+       name: loki-namespace
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-operator-group
+        name: loki-operator-group
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -52,23 +52,22 @@ spec:
             apiVersion: operators.coreos.com/v1
             kind: OperatorGroup
             metadata:
-              name: local-operator-group
-              namespace: openshift-local-storage
+              name: loki-operator-group
+              namespace: openshift-operators-redhat
             spec:
-              targetNamespaces:
-                - openshift-local-storage
+              upgradeStrategy: Default
 #Create the subscription when the operator group is ready
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: local-storage-operator-group
+       name: loki-operator-group
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-subscription
+        name: loki-subscription
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -79,41 +78,41 @@ spec:
             apiVersion: operators.coreos.com/v1alpha1
             kind: Subscription
             metadata:
-              name: local-storage-operator
-              namespace: openshift-local-storage
+              name: loki-operator
+              namespace: openshift-operators-redhat
             spec:
-              channel: '{{hub fromConfigMap "policies" "local-storage-operator-init" "channel" hub}}'
+              channel: '{{hub fromConfigMap "policies" "loki-operator-init" "channel" hub}}'
               installPlanApproval: Manual
-              name: local-storage-operator
+              name: loki-operator
               source: redhat-operators
               sourceNamespace: openshift-marketplace
-              startingCSV: '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
+              startingCSV: '{{hub fromConfigMap "policies" "loki-operator-init" "startingCSV" hub}}'
 #Approve the Install plan when it has been detected
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: local-storage-subscription
+       name: loki-subscription
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-operator-installplan-approve
+        name: loki-operator-installplan-approve
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
         severity: high
         object-templates-raw: |
-          {{- range $installplan := (lookup "operators.coreos.com/v1alpha1" "InstallPlan" "openshift-local-storage" "").items }}
+          {{- range $installplan := (lookup "operators.coreos.com/v1alpha1" "InstallPlan" "openshift-operators-redhat" "").items }}
             {{- range $installplan.spec.clusterServiceVersionNames }}
-            {{- if eq . "{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}" }}
+            {{- if eq . "{{hub fromConfigMap "policies" "loki-operator-init" "startingCSV" hub}}" }}
             - complianceType: musthave
               objectDefinition:
                 apiVersion: operators.coreos.com/v1alpha1
                 kind: InstallPlan
                 metadata:
-                  namespace: openshift-local-storage
+                  namespace: openshift-operators-redhat
                   name: '{{ $installplan.metadata.name }}'
                 spec:
                   approved: true
@@ -124,14 +123,14 @@ spec:
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: local-storage-operator-installplan-approve
+       name: loki-subscription
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: local-storage-operator-csv-check
+        name: loki-operator-csv-check
       spec:
         pruneObjectBehavior: None
         remediationAction: inform
@@ -142,7 +141,7 @@ spec:
             apiVersion: operators.coreos.com/v1alpha1
             kind: ClusterServiceVersion
             metadata:
-              name: '{{hub fromConfigMap "policies" "local-storage-operator-init" "startingCSV" hub}}'
-              namespace: openshift-local-storage
+              name: '{{hub fromConfigMap "policies" "loki-operator-init" "startingCSV" hub}}'
+              namespace: openshift-operators-redhat
             status:
               phase: Succeeded 

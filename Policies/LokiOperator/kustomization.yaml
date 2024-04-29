@@ -1,0 +1,5 @@
+resources:
+  - init-configmap.yaml
+  - lokioperator-placement-binding.yaml
+  - lokioperator-placement.yaml
+  - lokioperator.yaml

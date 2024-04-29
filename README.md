@@ -311,6 +311,10 @@ oc patch -n policies policy master-schedulable --type=merge -p '{"spec":{"disabl
 Follow the policy while it is being applied.  See [Local Storage Operator](#local-storage-operator) for more details.
 This policy sets all masters as schedulable so that application pods can run in the control plane.
 
+### Install Loki 
+
+This policy installs the Loki operator that will be used as a log storage for Openshift Logging 
+
 ### Enabling or Disabling all the policies
 
 To patch all the policies in a namespace run the following commands.
