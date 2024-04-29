@@ -253,7 +253,7 @@ The creation of the storage cluster takes several minutes, make sure all pods ar
 oc get pods -n openshift-storage
 ```
 
-### Replace Default Ingress Certificates
+### Replace Default Ingress Certificate
 
 This policy replaces the x509 certificate in the default ingress controller.
 
@@ -272,9 +272,12 @@ oc patch -n policies policy cert-ingress-replace --type=merge -p '{"spec":{"disa
 ```
 Follow the policy while it is being applied.  See [Local Storage Operator](#local-storage-operator) for more details.
 
-### Replace Default Ingress Certificates
+### Replace API Server Certificate
 
-This policy replaces the x509 certificate for the API service.
+This policy replaces the x509 certificate for the API server.  The config policy that checks for the correct applycation of the certificate takes a few minutes to get to the the compliance state, this is because a new version of kube-apiserver needs to be deployed, and this takes time.  You can follow the process looking at the pods in the **openshift-kube-apiserver** namespace.
+```
+watch -n4 "oc get po -n openshift-kube-apiserver"
+```
 
 Log in the Openshift cluster
 ```
