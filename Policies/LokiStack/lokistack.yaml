@@ -1,0 +1,180 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/description: Loki Stack Custom Resource Creation
+  name: lokistack
+  namespace: policies
+spec:
+  disabled: true
+  dependencies:
+  - apiVersion: policy.open-cluster-management.io/v1
+    compliance: Compliant
+    kind: Policy
+    name: loki-operator-install
+    namespace: policies
+  - apiVersion: policy.open-cluster-management.io/v1
+    compliance: Compliant
+    kind: Policy
+    name: logging-operator-install
+    namespace: policies
+  - apiVersion: policy.open-cluster-management.io/v1
+    compliance: Compliant
+    kind: Policy
+    name: odf-storagecluster
+    namespace: policies
+  policy-templates:
+#Create Object Bucket Claim
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: lokistack-obc
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: objectbucket.io/v1alpha1
+            kind: ObjectBucketClaim
+            metadata:
+              name: loki-bucket-odf
+              namespace: openshift-logging
+            spec:
+              generateBucketName: loki-bucket-odf
+              storageClassName: openshift-storage.noobaa.io
+#Check Object Bucket Claim
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: lokistack-obc
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: lokistack-obc-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+           apiVersion: objectbucket.io/v1alpha1
+           kind: ObjectBucketClaim
+           metadata:
+             name: loki-bucket-odf
+             namespace: openshift-logging
+           spec:
+             generateBucketName: loki-bucket-odf
+             storageClassName: openshift-storage.noobaa.io
+           status:
+             phase: Bound
+#Create OBC access secret
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: lokistack-obc-check
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: lokistack-secret-obc
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates-raw: |
+          {{- $bucket_host := fromConfigMap "openshift-logging" "loki-bucket-odf" "BUCKET_HOST" }}
+          {{- $bucket_port := fromConfigMap "openshift-logging" "loki-bucket-odf" "BUCKET_PORT" }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: v1                             
+                kind: Secret   
+                metadata:                                              
+                  name: lokistack-odf    
+                  namespace: openshift-logging
+                type: Opaque
+                data:        
+                  access_key_id: '{{ fromSecret "openshift-logging" "loki-bucket-odf" "AWS_ACCESS_KEY_ID" }}'
+                  access_key_secret: '{{ fromSecret "openshift-logging" "loki-bucket-odf" "AWS_SECRET_ACCESS_KEY" }}'
+                  bucketnames: '{{ fromConfigMap "openshift-logging" "loki-bucket-odf" "BUCKET_NAME" | base64enc }}'
+                  endpoint: '{{ (cat "https://" $bucket_host ":" $bucket_port) | replace " " "" | base64enc }}'
+#Create Loki Stack Custom Resource
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: lokistack-secret-obc
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: lokistack-custom-resource
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: loki.grafana.com/v1
+            kind: LokiStack
+            metadata:
+              name: logging-loki 
+              namespace: openshift-logging
+            spec:
+              size: 1x.small 
+              storage:
+                schemas:
+                  - effectiveDate: '2023-10-15'
+                    version: v13
+                secret:
+                  name: lokistack-odf
+                  type: s3 
+                  credentialMode: static
+              storageClassName: ocs-storagecluster-ceph-rbd
+              tenants:
+                mode: openshift-logging
+#Check Loki Stack Custom Resource
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: lokistack-custom-resource
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: lokistack-custom-resource-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: loki.grafana.com/v1
+            kind: LokiStack
+            metadata:
+              name: logging-loki 
+              namespace: openshift-logging
+            status:
+              conditions:
+              - reason: PendingComponents
+                status: "False"
+                type: Pending
+              - reason: ReadyComponents
+                status: "True"
+                type: Ready

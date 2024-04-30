@@ -1,0 +1,5 @@
+resources:
+  - init-configmap.yaml
+  - logging-operator.yaml
+  - logging-placement-binding.yaml
+  - logging-placement.yaml

@@ -1,0 +1,150 @@
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/description: Logging Opperator Installation
+  name: logging-operator-install
+  namespace: policies
+spec:
+  disabled: true
+  policy-templates:
+#Create namespace
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: logging-namespace
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+              name: openshift-logging
+              annotations:
+                openshift.io/cluster-monitoring: "true"
+#Create the operator group, when the namespace is ready
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: logging-namespace
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: logging-operator-group
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1
+            kind: OperatorGroup
+            metadata:
+              name: logging-operator-group
+              namespace: openshift-logging
+            spec: 
+              targetNamespaces:
+              - openshift-logging
+#Create the subscription when the operator group is ready
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: logging-operator-group
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: logging-subscription
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: Subscription
+            metadata:
+              name: logging-subscription
+              namespace: openshift-logging
+            spec:
+              channel: '{{hub fromConfigMap "policies" "logging-operator-init" "channel" hub}}'
+              installPlanApproval: Manual
+              name: cluster-logging
+              source: redhat-operators
+              sourceNamespace: openshift-marketplace
+              startingCSV: '{{hub fromConfigMap "policies" "logging-operator-init" "startingCSV" hub}}'
+#Approve the Install plan when it has been detected
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: logging-subscription
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: logging-installplan-approve
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates-raw: |
+          {{- range $installplan := (lookup "operators.coreos.com/v1alpha1" "InstallPlan" "openshift-logging" "").items }}
+            {{- range $installplan.spec.clusterServiceVersionNames }}
+            {{- if eq . "{{hub fromConfigMap "policies" "logging-operator-init" "startingCSV" hub}}" }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: operators.coreos.com/v1alpha1
+                kind: InstallPlan
+                metadata:
+                  namespace: openshift-logging
+                  name: '{{ $installplan.metadata.name }}'
+                spec:
+                  approved: true
+            {{- end }}
+            {{- end }}
+          {{- end }}
+#Check the CSV
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: logging-installplan-approve
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: logging-csv-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ClusterServiceVersion
+            metadata:
+              name: '{{hub fromConfigMap "policies" "logging-operator-init" "startingCSV" hub}}'
+              namespace: openshift-logging
+            status:
+              phase: Succeeded
+...

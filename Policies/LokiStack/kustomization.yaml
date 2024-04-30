@@ -1,0 +1,4 @@
+resources:
+  - lokistack-placement-binding.yaml
+  - lokistack-placement.yaml
+  - lokistack.yaml
