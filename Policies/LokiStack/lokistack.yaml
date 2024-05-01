@@ -109,6 +109,27 @@ spec:
                   access_key_secret: '{{ fromSecret "openshift-logging" "loki-bucket-odf" "AWS_SECRET_ACCESS_KEY" }}'
                   bucketnames: '{{ fromConfigMap "openshift-logging" "loki-bucket-odf" "BUCKET_NAME" | base64enc }}'
                   endpoint: '{{ (cat "https://" $bucket_host ":" $bucket_port) | replace " " "" | base64enc }}'
+#Create Config Map with service CA certificate
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: lokistack-service-ca-configmap
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates-raw: |
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: loki-s3-ca
+                namespace: openshift-logging
+              data:
+                service-ca.crt: |
+                  {{ fromSecret "openshift-service-ca" "signing-key" "tls.crt" | base64dec | autoindent }}
 #Create Loki Stack Custom Resource
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
@@ -134,7 +155,12 @@ spec:
               name: logging-loki 
               namespace: openshift-logging
             spec:
-              size: 1x.small 
+              limits:
+                global:
+                  ingestion:
+                    ingestionBurstSize: 16
+                    ingestionRate: 8
+              size: 1x.extra-small
               storage:
                 schemas:
                   - effectiveDate: '2023-10-15'
@@ -143,6 +169,8 @@ spec:
                   name: lokistack-odf
                   type: s3 
                   credentialMode: static
+                tls:
+                  caName: loki-s3-ca
               storageClassName: ocs-storagecluster-ceph-rbd
               tenants:
                 mode: openshift-logging

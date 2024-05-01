@@ -1,0 +1,4 @@
+resources:
+  - clusterlogging-placement-binding.yaml
+  - clusterlogging-placement.yaml
+  - clusterlogging.yaml
