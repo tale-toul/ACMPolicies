@@ -98,13 +98,13 @@ spec:
           {{- $bucket_port := fromConfigMap "openshift-logging" "loki-bucket-odf" "BUCKET_PORT" }}
             - complianceType: musthave
               objectDefinition:
-                apiVersion: v1                             
-                kind: Secret   
-                metadata:                                              
-                  name: lokistack-odf    
+                apiVersion: v1
+                kind: Secret
+                metadata:
+                  name: lokistack-odf
                   namespace: openshift-logging
                 type: Opaque
-                data:        
+                data:
                   access_key_id: '{{ fromSecret "openshift-logging" "loki-bucket-odf" "AWS_ACCESS_KEY_ID" }}'
                   access_key_secret: '{{ fromSecret "openshift-logging" "loki-bucket-odf" "AWS_SECRET_ACCESS_KEY" }}'
                   bucketnames: '{{ fromConfigMap "openshift-logging" "loki-bucket-odf" "BUCKET_NAME" | base64enc }}'
@@ -152,7 +152,7 @@ spec:
             apiVersion: loki.grafana.com/v1
             kind: LokiStack
             metadata:
-              name: logging-loki 
+              name: logging-loki
               namespace: openshift-logging
             spec:
               limits:
@@ -167,7 +167,7 @@ spec:
                     version: v13
                 secret:
                   name: lokistack-odf
-                  type: s3 
+                  type: s3
                   credentialMode: static
                 tls:
                   caName: loki-s3-ca
@@ -196,7 +196,7 @@ spec:
             apiVersion: loki.grafana.com/v1
             kind: LokiStack
             metadata:
-              name: logging-loki 
+              name: logging-loki
               namespace: openshift-logging
             status:
               conditions:
