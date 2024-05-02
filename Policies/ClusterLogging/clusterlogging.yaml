@@ -63,30 +63,33 @@ spec:
                     cpu: 200m
                     memory: 128Mi
 #Check Cluster Logging Custom Resource
-#  - extraDependencies:
-#     - apiVersion: policy.open-cluster-management.io/v1
-#       kind: ConfigurationPolicy
-#       name: clusterlogging-custom-resource
-#       namespace: ""
-#       compliance: Compliant
-#    objectDefinition:
-#      apiVersion: policy.open-cluster-management.io/v1
-#      kind: ConfigurationPolicy
-#      metadata:
-#        name: clusterlogging-custom-resource-check
-#      spec:
-#        pruneObjectBehavior: None
-#        remediationAction: inform
-#        severity: high
-#        object-templates:
-#        - complianceType: musthave
-#          objectDefinition:
-#            apiVersion: logging.openshift.io/v1
-#            kind: ClusterLogging
-#            metadata:
-#              name: instance 
-#              namespace: openshift-logging 
-#            spec:
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: clusterlogging-custom-resource
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: clusterlogging-custom-resource-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: logging.openshift.io/v1
+            kind: ClusterLogging
+            metadata:
+              name: instance
+              namespace: openshift-logging
+            status:
+              conditions:
+              - status: "True"
+                type: Ready
 #Enable Logging Console Plugin
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
