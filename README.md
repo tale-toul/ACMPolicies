@@ -311,9 +311,21 @@ oc patch -n policies policy master-schedulable --type=merge -p '{"spec":{"disabl
 Follow the policy while it is being applied.  See [Local Storage Operator](#local-storage-operator) for more details.
 This policy sets all masters as schedulable so that application pods can run in the control plane.
 
-### Install Loki 
+### Loki Operator
 
 This policy installs the Loki operator that will be used as a log storage for Openshift Logging 
+
+### Loki Stack
+
+Creates the Loki Stack custom resource.
+
+Details about how to configure the CA certificate to connect to the object storage endpoint can be found at [How to configure Loki Object Storage CA certificate](https://access.redhat.com/solutions/7006107) and [Loki doesn't watch the `spec.storage.tls.caName](https://access.redhat.com/solutions/7049788)
+
+### Cluster Logging Policy
+
+Creates the Cluster Logging custom resource based on Loki as log store and vector for data collection.  This policy depends on the policies: Loki Operator, Loki Stack and Loggin Operator 
+
+To define the resources assigned to the collector pods look at [https://access.redhat.com/solutions/6999814](https://access.redhat.com/solutions/6999814)
 
 ### Enabling or Disabling all the policies
 
