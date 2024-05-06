@@ -1,0 +1,4 @@
+resources:
+  - etcd_encryption-placement-binding.yaml
+  - etcd_encryption-placement.yaml
+  - etcd_encryption_policy.yaml

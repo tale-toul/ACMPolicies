@@ -1,0 +1,4 @@
+resources:
+  - etcdbackup-placement-binding.yaml
+  - etcdbackup-placement.yaml
+  - etcdbackup.yaml

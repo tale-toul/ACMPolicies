@@ -1,0 +1,14 @@
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: etcd-backup-placementbinding
+  namespace: policies
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: etcd-backup-placement
+subjects:
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: etcd-backup

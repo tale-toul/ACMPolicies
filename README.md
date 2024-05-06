@@ -327,6 +327,18 @@ Creates the Cluster Logging custom resource based on Loki as log store and vecto
 
 To define the resources assigned to the collector pods look at [https://access.redhat.com/solutions/6999814](https://access.redhat.com/solutions/6999814)
 
+### Etcd Encryption
+
+Encrypts etcd using aes-gsm.  Check ["Encrypting etcd data"](https://docs.openshift.com/container-platform/4.14/security/encrypting-etcd.html) for more information.
+
+### Etcd Backup
+
+Deploys a cron job to backup the etcd database.  
+
+By default the backup job is executed every hour: __schedule: "5 * * * *"__.  If the schedule is changed, adapt the __find__ command in the script to delete the old files. In the default configuration only the last two backups are kept, any file older than 2 hours is deleted: __find /home/core/assets/backup -type f -mmin +"120" -delete'__
+
+The configuration policy that checks for the successful execution of the backup jobs (etcd-encryption-job-check), looks for any failed job, if one exists the whole policy is non compliant, to make the policy compliant again, the failed job must be manually deleted.
+
 ### Enabling or Disabling all the policies
 
 To patch all the policies in a namespace run the following commands.

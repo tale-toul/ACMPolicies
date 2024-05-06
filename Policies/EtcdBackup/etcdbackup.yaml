@@ -1,0 +1,249 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/description: Creates the cronjob that backups etcd database
+  name: etcd-backup
+  namespace: policies
+spec:
+  disabled: true
+  dependencies:
+  - apiVersion: policy.open-cluster-management.io/v1
+    compliance: Compliant
+    kind: Policy
+    name: etcd-encryption
+    namespace: policies
+  policy-templates:
+#Create Namespace for etcd backup
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: etcd-encryption-namespace
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+              name: ocp-etcd-backup
+#Create Service Account
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: etcd-encryption-namespace
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: etcd-encryption-service-account
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            kind: ServiceAccount
+            apiVersion: v1
+            metadata:
+              name: openshift-backup
+              namespace: ocp-etcd-backup
+              labels:
+                app: openshift-backup
+#Create Cluster Role
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: etcd-encryption-cluster-role
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRole
+            metadata:
+              name: cluster-etcd-backup
+            rules:
+            - apiGroups: [""]
+              resources:
+                 - "nodes"
+              verbs: ["get", "list"]
+            - apiGroups: [""]
+              resources:
+                 - "pods"
+                 - "pods/log"
+                 - "pods/attach"
+              verbs: ["get", "list", "create", "delete", "watch"]
+            - apiGroups: [""]
+              resources:
+                 - "namespaces"
+              verbs: ["get", "list", "create"]
+#Create ClusterRoleBinding
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: etcd-encryption-cluster-role
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: etcd-encryption-cluster-role-binding
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            kind: ClusterRoleBinding
+            apiVersion: rbac.authorization.k8s.io/v1
+            metadata:
+              name: openshift-backup
+              labels:
+                app: openshift-backup
+            subjects:
+              - kind: ServiceAccount
+                name: openshift-backup
+                namespace: ocp-etcd-backup
+            roleRef:
+              apiGroup: rbac.authorization.k8s.io
+              kind: ClusterRole
+              name: cluster-etcd-backup
+#Add service account to SCC "privileged"
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: etcd-encryption-service-account
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: etcd-encryption-assign-scc
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRoleBinding
+            metadata:
+              name: system:openshift:scc:privileged
+            roleRef:
+              apiGroup: rbac.authorization.k8s.io
+              kind: ClusterRole
+              name: system:openshift:scc:privileged
+            subjects:
+            - kind: ServiceAccount
+              name: openshift-backup
+              namespace: ocp-etcd-backup
+#Create Backup CronJob
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: etcd-encryption-cluster-role
+       namespace: ""
+       compliance: Compliant
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: etcd-encryption-namespace
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: etcd-encryption-cronjob
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            kind: CronJob
+            apiVersion: batch/v1
+            metadata:
+              name: openshift-backup
+              namespace: ocp-etcd-backup
+              labels:
+                app: openshift-backup
+            spec:
+              schedule: "5 * * * *"
+              concurrencyPolicy: Forbid
+              successfulJobsHistoryLimit: 5
+              failedJobsHistoryLimit: 5
+              jobTemplate:
+                metadata:
+                  labels:
+                    app: openshift-backup
+                spec:
+                  backoffLimit: 0
+                  template:
+                    metadata:
+                      labels:
+                        app: openshift-backup
+                    spec:
+                      containers:
+                        - name: backup
+                          image: "registry.redhat.io/openshift4/ose-cli"
+                          command:
+                            - "/bin/bash"
+                            - "-c"
+                            - oc get nodes -l node-role.kubernetes.io/master --no-headers -o name | head -n 1 |xargs -I {} -- oc debug {}  --to-namespace=ocp-etcd-backup -- bash -c 'chroot /host sudo -E /usr/local/bin/cluster-backup.sh /home/core/assets/backup && chroot /host sudo -E find /home/core/assets/backup -type f -mmin +"120" -delete'
+                      restartPolicy: "Never"
+                      terminationGracePeriodSeconds: 30
+                      activeDeadlineSeconds: 300
+                      dnsPolicy: "ClusterFirst"
+                      serviceAccountName: "openshift-backup"
+                      serviceAccount: "openshift-backup"
+#Check for job completion
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: etcd-encryption-cronjob
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: etcd-encryption-job-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: mustnothave
+          objectDefinition:
+            apiVersion: batch/v1
+            kind: Job
+            metadata:
+              namespace: ocp-etcd-backup
+              labels:
+                app: openshift-backup
+            status:
+              conditions:
+                - reason: BackoffLimitExceeded
+                  status: "True"
+                  type: Failed
+              failed: 1
