@@ -1,0 +1,5 @@
+resources:
+  - init-configmap.yaml
+  - ldap-auth-placement-binding.yaml
+  - ldap-auth-placement.yaml
+  - ldap-auth.yaml

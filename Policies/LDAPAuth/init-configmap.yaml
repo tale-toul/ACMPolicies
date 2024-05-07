@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ldap-auth-configmap
+  namespace: policies
+data:
+  bind-user: "cn=directory manager" 
+  ldaps-url: "ldaps://ip-192-168-0-51.eu-west-1.compute.internal/cn=users,cn=accounts,dc=eu-west-1,dc=compute,dc=internal?uid"
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIEuDCCAyCgAwIBAgIBATANBgkqhkiG9w0BAQsFADBFMSMwIQYDVQQKDBpFVS1X
+    RVNULTEuQ09NUFVURS5JTlRFUk5BTDEeMBwGA1UEAwwVQ2VydGlmaWNhdGUgQXV0
+    aG9yaXR5MB4XDTI0MDUwNzEzNTEzMFoXDTQ0MDUwNzEzNTEzMFowRTEjMCEGA1UE
+    CgwaRVUtV0VTVC0xLkNPTVBVVEUuSU5URVJOQUwxHjAcBgNVBAMMFUNlcnRpZmlj
+    YXRlIEF1dGhvcml0eTCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAOSz
+    K39M3PIduwQ8syo4woK4BK8YIMGIsE4LwSp66UPTo6OsI43rvfOvUROjYVEQ/Ci3
+    YrOcThrjnwrqgV2vtxe7df68pz8d5WTJV1EfOPMZUTKxKhqa1J+ZRBFFs2HbIqgj
+    y8n/XyW3DnRNJtSxg4jMgsY/cqjZRGfbtCOm+DhEbTrwN5LdlJV7d0xSS+1yU0Yr
+    QPOeAFafPo8QQcTWZVIvd+SDZz++FyO6ua0hSefQXF0O31NRHRuu5ruXAV/jHo2W
+    k1xSfuQTKCR2KxbqRQc9YSDtT62UffMbiKnlMHcegebEtD41810kLIVePM/BDuiD
+    Q32GhGH7hnm139CG3fiDU7kn4uJW2h5pXuWgvzKHwPNrSQgOVAYGybCzak5Cvcn1
+    9wvMOWoSY6lxMrnqBS3HlyXRkIBSCXVEkTl71+8PCCVJiAgn/11Y+pY8wRLe5xIK
+    q1cDAcBxNEbgGJzv4Z2xYHluCWN6DhBi9fOd1ZgR18c0AMY69nqw0aJfpKdKGQID
+    AQABo4GyMIGvMB8GA1UdIwQYMBaAFDogfWAm6RZ4vaV/tO1IfUktnHaIMA8GA1Ud
+    EwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgHGMB0GA1UdDgQWBBQ6IH1gJukWeL2l
+    f7TtSH1JLZx2iDBMBggrBgEFBQcBAQRAMD4wPAYIKwYBBQUHMAGGMGh0dHA6Ly9p
+    cGEtY2EuZXUtd2VzdC0xLmNvbXB1dGUuaW50ZXJuYWwvY2Evb2NzcDANBgkqhkiG
+    9w0BAQsFAAOCAYEANaMMgDyT+14i46iC1ep8h6WGMfOla/qYkg9XN7vEr0SAROre
+    dWcJVoxbobWimn8LbbTcLsRyWN/HV1/0AJpP4qbzZFu4eXWLZ7GE5FV42b5TMi5C
+    MMAjTO4dhWjrPq34ZkL7EGhag2o9oLF9uPfUdcxV8Iw4cxwspMFvdep+IZC62svB
+    ik6nr+cCC5gq1pHGwj+TlT0h++JY2KsvAf3eIsBrix/BwHVTI8wYaQXByP63sIhI
+    Ig6Aom436PLxjtaH048+qSem7lb7KTJMYjVBtZsCOeH1rPcjYjaLhx4krsJzF00o
+    lZIv50xQsyPmmh/y52ZqM1FASXsRxPuU1aSNsUJBZj7PflvwrY2mxib7Tmo3FC0b
+    qbwqVOnA1ovnYoMSf4Tcna5s7YgtxARrEl9tSH87j/aR7Q7sPmtywS8j0UubQ02s
+    stGoUp6PXLHMhzAMiqlysz4PEBhTqVEzaBbMmcCIrNO4W1gBOj6EpSC+7JxkmglA
+    3lHg9zfcZh2rrPRn
+    -----END CERTIFICATE-----

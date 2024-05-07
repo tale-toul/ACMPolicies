@@ -1,0 +1,144 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/description: Cluster Authentication via LDAP
+  name: ldap-auth-configuration
+  namespace: policies
+spec:
+  disabled: true
+  policy-templates:
+#Check that the secret containing the bind password exists
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: ldap-auth-check-secret
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: ldap-secret
+                namespace: openshift-config
+              data:
+                bindPassword: '{{ fromSecret "openshift-config" "ldap-secret" "bindPassword" }}'
+#Create Config Map
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: ldap-auth-create-configmap
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: ca-config-map
+              namespace: openshift-config
+            data:
+              ca.crt: |
+                {{ fromConfigMap "policies" "ldap-auth-configmap" "ca.crt" | autoindent }}
+#Add LDAP IdM to OAuth
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: ldap-auth-check-secret
+       namespace: ""
+       compliance: Compliant
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: ldap-auth-create-configmap
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: ldap-auth-oauth
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: config.openshift.io/v1
+            kind: OAuth
+            metadata:
+              name: cluster
+            spec:
+              identityProviders:
+              - name: ldapidm 
+                mappingMethod: claim 
+                type: LDAP
+                ldap:
+                  attributes:
+                    id: 
+                    - dn
+                    email: 
+                    - mail
+                    name: 
+                    - cn
+                    preferredUsername: 
+                    - uid
+                  bindDN: '{{ fromConfigMap "policies" "ldap-auth-configmap" "bind-user" }}'
+                  bindPassword: 
+                    name: ldap-secret
+                  ca: 
+                    name: ca-config-map
+                  insecure: false 
+                  url: '{{ fromConfigMap "policies" "ldap-auth-configmap" "ldaps-url" }}'
+#Check Oauth Deployment
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: ldap-auth-oauth
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: ldap-auth-oauth-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: config.openshift.io/v1
+            kind: ClusterOperator
+            metadata:
+              name: authentication
+            status:
+              conditions:
+              - message: All is well
+                reason: AsExpected
+                status: "False"
+                type: Degraded
+              - reason: AsExpected
+                status: "False"
+                type: Progressing
+              - message: All is well
+                reason: AsExpected
+                status: "True"
+                type: Available
+              - message: All is well
+                reason: AsExpected
+                status: "True"
+                type: Upgradeable
