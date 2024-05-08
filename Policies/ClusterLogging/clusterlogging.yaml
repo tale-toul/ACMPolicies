@@ -57,11 +57,11 @@ spec:
                 type: vector
                 resources:
                   limits:
-                    cpu: 500m
-                    memory: 512Mi
+                    cpu: 600m
+                    memory: 1024Mi
                   requests:
                     cpu: 200m
-                    memory: 128Mi
+                    memory: 256Mi
 #Check Cluster Logging Custom Resource
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1

@@ -158,8 +158,8 @@ spec:
               limits:
                 global:
                   ingestion:
-                    ingestionBurstSize: 16
-                    ingestionRate: 8
+                    perStreamRateLimit : 6
+                    perStreamRateLimitBurst : 22
               size: 1x.extra-small
               storage:
                 schemas:
