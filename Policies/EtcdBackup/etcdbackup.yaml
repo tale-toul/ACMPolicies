@@ -22,7 +22,7 @@ spec:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: etcd-encryption-namespace
+        name: etcd-backup-namespace
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -38,14 +38,14 @@ spec:
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: etcd-encryption-namespace
+       name: etcd-backup-namespace
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: etcd-encryption-service-account
+        name: etcd-backup-service-account
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -65,7 +65,7 @@ spec:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: etcd-encryption-cluster-role
+        name: etcd-backup-cluster-role
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -96,14 +96,14 @@ spec:
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: etcd-encryption-cluster-role
+       name: etcd-backup-cluster-role
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: etcd-encryption-cluster-role-binding
+        name: etcd-backup-cluster-role-binding
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -129,14 +129,14 @@ spec:
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: etcd-encryption-service-account
+       name: etcd-backup-service-account
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: etcd-encryption-assign-scc
+        name: etcd-backup-assign-scc
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -160,19 +160,19 @@ spec:
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: etcd-encryption-cluster-role
+       name: etcd-backup-cluster-role
        namespace: ""
        compliance: Compliant
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: etcd-encryption-namespace
+       name: etcd-backup-namespace
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: etcd-encryption-cronjob
+        name: etcd-backup-cronjob
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce
@@ -220,14 +220,14 @@ spec:
   - extraDependencies:
      - apiVersion: policy.open-cluster-management.io/v1
        kind: ConfigurationPolicy
-       name: etcd-encryption-cronjob
+       name: etcd-backup-cronjob
        namespace: ""
        compliance: Compliant
     objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: etcd-encryption-job-check
+        name: etcd-backup-job-check
       spec:
         pruneObjectBehavior: None
         remediationAction: inform
