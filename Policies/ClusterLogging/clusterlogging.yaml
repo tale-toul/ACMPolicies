@@ -238,6 +238,8 @@ spec:
                   name: logging-loki
               visualization:
                 type: ocp-console
+                ocpConsole:
+                  timeout: 190s
               collection:
                 type: vector
                 resources:
