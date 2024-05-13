@@ -50,6 +50,11 @@ git clone https://github.com/tale-toul/ACMPolicies.git
 cd ACMPolicies
 ```
 
+Log into the cluster with the kubeadmin user
+```
+oc login -u kubeadmin -p aqRan...FM2CU https://api.cluster-9d8bq.9d8bq.sandbox1171.opentlc.com:6443
+```
+
 In order for ansible to stablish a secure connections with the Openshift API, the k8s ansible modules need access to the root CA certificate used by the cluster's API service. Obtain the CA bundle running the following command.
 
 Make sure the resulting file is stored in the Ansible directory:
@@ -70,10 +75,10 @@ token: sha256~roxev5_y0w4o-VjSadl3tiTkXqSOVhCRMvmV-K3xpfw
 ```
 The above file should be encrypted with ansible-vault.  Make sure to generate the vault-id file in the Ansible directory:
 ```
-$ cd Ansible
-$ echo "token: $(oc whoami -t)" > group_vars/user_credentials.vault
-$ pwmake 128 > vault-id
-$ ansible-vault encrypt --vault-id vault-id group_vars/user_credentials.vault
+cd Ansible
+echo "token: $(oc whoami -t)" > group_vars/user_credentials.vault
+pwmake 128 > vault-id
+ansible-vault encrypt --vault-id vault-id group_vars/user_credentials.vault
 ```
 The vault-id file is passed as an argument to the playbook later.
 
@@ -158,6 +163,28 @@ Whenever a policy needs to read some configuration data, like the particular ver
 The policies in this repository support the use of kustomize.
 
 All policy definitions are disabled by default.
+
+### Applying all the policies
+
+To apply all the policies in one go make sure you are in the **ACMPolicies** directory and run the command:
+
+```
+for x in $(ls -d Policies/*); do echo $x; oc apply -k $x; done
+```
+
+### Enabling or Disabling all the policies
+
+To patch all the policies in a namespace run the following commands.
+
+* To **enable** all the policies:
+```
+for x in $(oc get policies -n policies -o name); do oc patch -n policies $x --type=merge -p '{"spec":{"disabled":false}}'; done
+```
+
+* To **disable** all the polcies:
+```
+for x in $(oc get policies -n policies -o name); do oc patch -n policies $x --type=merge -p '{"spec":{"disabled":true}}'; done
+```
 
 ### Local Storage Operator
 
@@ -340,20 +367,6 @@ Deploys a cron job to backup the etcd database.
 By default the backup job is executed every hour: __schedule: "5 * * * *"__.  If the schedule is changed, adapt the __find__ command in the script to delete the old files. In the default configuration only the last two backups are kept, any file older than 2 hours is deleted: __find /home/core/assets/backup -type f -mmin +"120" -delete'__
 
 The configuration policy that checks for the successful execution of the backup jobs (etcd-encryption-job-check), looks for any failed job, if one exists the whole policy is non compliant, to make the policy compliant again, the failed job must be manually deleted.
-
-### Enabling or Disabling all the policies
-
-To patch all the policies in a namespace run the following commands.
-
-* To **enable** all the policies:
-```
-for x in $(oc get policies -n policies -o name); do oc patch -n policies $x --type=merge -p '{"spec":{"disabled":false}}'; done
-```
-
-* To **disable** all the polcies:
-```
-for x in $(oc get policies -n policies -o name); do oc patch -n policies $x --type=merge -p '{"spec":{"disabled":true}}'; done
-```
 
 ### Updating Operators
 
