@@ -327,6 +327,8 @@ Creates the Cluster Logging custom resource based on Loki as log store and vecto
 
 To define the resources assigned to the collector pods look at [https://access.redhat.com/solutions/6999814](https://access.redhat.com/solutions/6999814)
 
+This Policy includes a job that executes a script on the cluster to define the data retention for the log messages.  The retention is defined to 1 day, so any logs older than 1 day will be deleted.  The retention is defined in the S3 bucket.  More details can be found in the git hub repository [S3lifecycle](https://github.com/tale-toul/S3lifecycle)
+
 ### Etcd Encryption
 
 Encrypts etcd using aes-gsm.  Check ["Encrypting etcd data"](https://docs.openshift.com/container-platform/4.14/security/encrypting-etcd.html) for more information.

@@ -184,6 +184,34 @@ spec:
                   terminationGracePeriodSeconds: 30
                   activeDeadlineSeconds: 300
                   dnsPolicy: "ClusterFirst"
+#Check Job completion
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: clusterlogging-data-retention-job
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: clusterlogging-data-retention-job-check
+      spec:
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: batch/v1
+            kind: Job
+            metadata:
+              name: set-data-retention
+              namespace: openshift-logging
+            status:
+              conditions:
+                - type: Complete
+                  status: 'True'
+              succeeded: 1
 #Create Cluster Logging Custom Resource
   - objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
