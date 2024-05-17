@@ -1,0 +1,4 @@
+resources:
+  - restrict-users-placement-binding.yaml
+  - restrict-users-placement.yaml
+  - restrict-users.yaml

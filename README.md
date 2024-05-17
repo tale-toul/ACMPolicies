@@ -368,6 +368,13 @@ By default the backup job is executed every hour: __schedule: "5 * * * *"__.  If
 
 The configuration policy that checks for the successful execution of the backup jobs (etcd-encryption-job-check), looks for any failed job, if one exists the whole policy is non compliant, to make the policy compliant again, the failed job must be manually deleted.
 
+### User Restrictions
+
+This policy applies restrictions to non privileges users:
+
+* Disable namespace creation
+* Disable Administrator and "All Clusters" perspectives in web console.
+
 ### Updating Operators
 
 The operator version is found in the config map **init-configmap.yaml**, to update an operator enter the new channel and version in the configmap, the policy will read the new values and apply the changes.  If the policy was disabled, it must be enabled first.

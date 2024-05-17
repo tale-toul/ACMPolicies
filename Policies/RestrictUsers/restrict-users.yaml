@@ -1,0 +1,101 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/description: Apply some restrictions to unprivileged users
+  name: restrict-users
+  namespace: policies
+spec:
+  disabled: true
+  policy-templates:
+#Disable namespace creation
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: restrict-users-namespace-creation
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: mustnothave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRoleBinding
+            metadata:
+              name: self-provisioners
+            roleRef:
+              apiGroup: rbac.authorization.k8s.io
+              kind: ClusterRole
+              name: self-provisioner
+            subjects:
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: system:authenticated:oauth
+#Check disabled namespace creation
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: restrict-users-namespace-creation
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: restrictions-users-namespace-creation
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: mustnothave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRoleBinding
+            roleRef:
+              apiGroup: rbac.authorization.k8s.io
+              kind: ClusterRole
+              name: self-provisioner
+            subjects:
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: system:authenticated:oauth
+#Disable Administrator and "All Clusters" perspectives from non privileges users
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: restrictions-users-console-perspectives
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operator.openshift.io/v1
+            kind: Console
+            metadata:
+              name: cluster
+            spec:
+              customization:
+                perspectives:
+                - id: admin
+                  visibility:
+                    accessReview:
+                      required:
+                      - resource: namespaces
+                        verb: get
+                    state: AccessReview
+                - id: acm
+                  visibility:
+                    accessReview:
+                      required:
+                      - resource: namespaces
+                        verb: get
+                    state: AccessReview
