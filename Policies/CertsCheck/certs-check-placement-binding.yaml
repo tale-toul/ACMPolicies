@@ -1,0 +1,14 @@
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: certs-check-placementbinding
+  namespace: policies
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: 
+subjects:
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: 

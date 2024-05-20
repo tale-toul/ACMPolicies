@@ -1,0 +1,4 @@
+resources:
+  - certs-check-placement-binding.yaml
+  - certs-check-placement.yaml
+  - certs-check.yaml
