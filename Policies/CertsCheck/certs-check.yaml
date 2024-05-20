@@ -23,7 +23,7 @@ spec:
             - openshift-config
         labelSelector:
           matchLabels:
-            certificate-type: apiserver
+            certificate-type: "apiserver"
         remediationAction: inform
         severity: high
         minimumDuration: 600h
