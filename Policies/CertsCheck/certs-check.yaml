@@ -22,7 +22,8 @@ spec:
             - openshift-ingress
             - openshift-config
         labelSelector:
-          certificate-type: apiserver
+          matchLabels:
+            certificate-type: apiserver
         remediationAction: inform
         severity: high
         minimumDuration: 600h
