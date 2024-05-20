@@ -7,8 +7,8 @@ metadata:
 placementRef:
   apiGroup: cluster.open-cluster-management.io
   kind: Placement
-  name: 
+  name: certs-check-placement
 subjects:
 - apiGroup: policy.open-cluster-management.io
   kind: Policy
-  name: 
+  name: certs-check
