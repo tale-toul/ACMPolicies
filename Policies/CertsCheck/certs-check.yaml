@@ -25,4 +25,4 @@ spec:
           certificate-type: apiserver
         remediationAction: inform
         severity: high
-        minimumDuration: 600h
+        minimumDuration: 2160h
