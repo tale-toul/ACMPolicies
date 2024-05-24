@@ -6,7 +6,7 @@ metadata:
     policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
     policy.open-cluster-management.io/standards: NIST SP 800-53
     policy.open-cluster-management.io/description: Set up the clusterlifecycle infrastructure in ACM
-  name: clusterlifecycle
+  name: acm-clusterlifecycle
   namespace: policies
 spec:
   disabled: true
@@ -22,7 +22,7 @@ spec:
       apiVersion: policy.open-cluster-management.io/v1
       kind: ConfigurationPolicy
       metadata:
-        name: clusterlifecycle-agentservice
+        name: acm-clusterlifecycle-agentservice
       spec:
         pruneObjectBehavior: None
         remediationAction: enforce

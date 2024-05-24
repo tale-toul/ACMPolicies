@@ -2,7 +2,7 @@
 apiVersion: cluster.open-cluster-management.io/v1beta1 
 kind: Placement
 metadata:
-  name: clusterlifecycle-placement
+  name: acm-clusterlifecycle-placement
   namespace: policies
 spec:
   predicates:
