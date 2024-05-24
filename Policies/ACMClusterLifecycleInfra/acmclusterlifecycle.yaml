@@ -84,3 +84,70 @@ spec:
               - reason: DeploymentSucceeded
                 status: "True"
                 type: DeploymentsHealthy
+# Create host inventory
+  # Create the host inventory namespace
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: acm-clusterlifecycle-agentservice-check
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: acm-clusterlifecycle-agentservice-hostinventory
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+              name: workload-clusters
+  # Create the Infrastructure Environment (host inventory)
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: acm-clusterlifecycle-agentservice-hostinventory
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: acm-clusterlifecycle-infraenv
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: agent-install.openshift.io/v1beta1
+            kind: InfraEnv
+            metadata:
+              name: workload-clusters
+              namespace: workload-clusters
+            spec:
+              proxy:
+                httpProxy: '{{ fromConfigMap "policies" "proxy-config-mano" "httpProxy" }}'
+                httpsProxy: '{{ fromConfigMap "policies" "proxy-config-mano" "httpsProxy" }}'
+                noProxy: '{{ fromConfigMap "policies" "proxy-config-mano" "noProxy" }}'
+              additionalNTPSources:
+                '{{ fromConfigMap "policies" "acm-clusterlifecycle-configmap" "additionalNTPSources" | indent }}'
+              sshAuthorizedKey: '{{ fromSecret "policies" "workload-clusters-config" "sshAuthorizedKey"  }}'
+              pullSecretRef:
+                name: pullsecret-workload-clusters
+              agentLabels:
+                <key>: <value>
+              nmStateConfigLabelSelector:
+                matchLabels:
+                  <key>: <value>
+              cpuArchitecture: x86_64
+              ipxeScriptType: DiscoveryImageAlways
+              additionalTrustBundle: <bundle>
+              osImageVersion: <version>
