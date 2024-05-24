@@ -30,7 +30,7 @@ spec:
         object-templates:
         - complianceType: musthave
           objectDefinition:
-            piVersion: agent-install.openshift.io/v1beta1
+            apiVersion: agent-install.openshift.io/v1beta1
             kind: AgentServiceConfig
             metadata:
              name: agent
@@ -53,3 +53,34 @@ spec:
                 resources:
                   requests:
                     storage: 50Gi
+  # Check Agent Service Config
+  - extraDependencies:
+     - apiVersion: policy.open-cluster-management.io/v1
+       kind: ConfigurationPolicy
+       name: acm-clusterlifecycle-agentservice
+       namespace: ""
+       compliance: Compliant
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: acm-clusterlifecycle-agentservice-check
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: inform
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: agent-install.openshift.io/v1beta1
+            kind: AgentServiceConfig
+            metadata:
+             name: agent
+            status:
+              conditions:
+              - reason: ReconcileSucceeded
+                status: "True"
+                type: ReconcileCompleted
+              - reason: DeploymentSucceeded
+                status: "True"
+                type: DeploymentsHealthy

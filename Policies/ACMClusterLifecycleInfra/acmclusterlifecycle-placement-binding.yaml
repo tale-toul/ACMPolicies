@@ -11,4 +11,5 @@ placementRef:
 subjects:
 - apiGroup: policy.open-cluster-management.io
   kind: Policy
-  name: acmc-lusterlifecycle
+  name: acm-clusterlifecycle
+        
