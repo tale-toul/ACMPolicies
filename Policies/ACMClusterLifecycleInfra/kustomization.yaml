@@ -1,0 +1,4 @@
+resources:
+  - acmclusterlifecycle-placement-binding.yaml
+  - acmclusterlifecycle-placement.yaml
+  - acmclusterlifecycle.yaml

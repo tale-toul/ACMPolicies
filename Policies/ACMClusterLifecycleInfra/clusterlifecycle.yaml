@@ -1,0 +1,55 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/description: Set up the clusterlifecycle infrastructure in ACM
+  name: clusterlifecycle
+  namespace: policies
+spec:
+  disabled: true
+  dependencies:
+  - apiVersion: policy.open-cluster-management.io/v1
+    compliance: Compliant
+    kind: Policy
+    name: odf-storagecluster
+    namespace: policies
+  policy-templates:
+  # Create Agent Service Config
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: clusterlifecycle-agentservice
+      spec:
+        pruneObjectBehavior: None
+        remediationAction: enforce
+        severity: high
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            piVersion: agent-install.openshift.io/v1beta1
+            kind: AgentServiceConfig
+            metadata:
+             name: agent
+            spec:
+              databaseStorage:
+                accessModes:
+                - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 10Gi
+              filesystemStorage:
+                accessModes:
+                - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 100Gi
+              imageStorage:
+                accessModes:
+                - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 50Gi
